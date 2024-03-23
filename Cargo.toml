@@ -1,6 +1,6 @@
 [package]
 name = "rsftch"
-version = "0.1.3"
+version = "0.1.4"
 edition = "2021"
 authors = ["Charlie charliejohanid@gmail.com"]
 license = "MIT"

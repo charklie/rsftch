@@ -1,12 +1,13 @@
 use std::process::Command;
 use std::env;
+use std::fs;
 use colored::Colorize;
 
 fn main() {
   // let icon = "";
   let user = whoami();
   let hostname = cat("/etc/hostname").unwrap();
-  let distro = get_os_release_pretty_name().unwrap_or("".to_string());
+  let distro = get_os_release_pretty_name('p').unwrap_or("".to_string());
   let kernel = uname_r();
   let desktop = option_env!("XDG_CURRENT_DESKTOP").unwrap_or("");
   let uptime = get_uptime();
@@ -34,19 +35,46 @@ fn cat(path: &str) -> Result<String, String> {
   Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
 }
 
-fn get_os_release_pretty_name() -> Option<String> {
-  let output = Command::new("cat").arg("/etc/os-release").output().ok()?;
-  let output_str = String::from_utf8_lossy(&output.stdout);
 
-  let lines = output_str.lines();
-  for line in lines {
-    if line.starts_with("ID=") {
-      let id_str = line.splitn(2, '=').nth(1)?;
-      return Some(id_str.trim().to_owned());
+fn get_os_release_pretty_name(opt: char) -> Option<String> {
+  if opt == 'i' { // id
+    let output = Command::new("cat")
+        .arg("/etc/os-release")
+        .output()
+        .ok()?;
+
+    let output_str = String::from_utf8_lossy(&output.stdout);
+
+    let lines = output_str.lines();
+    for line in lines {
+      if line.starts_with("ID=") {
+        let parts = line.splitn(2, '=').collect::<Vec<_>>();
+        if parts.len() == 2 {
+          // Remove quotes before returning
+          return Some(parts[1].trim().trim_matches('\"').to_owned());
+        }
+      }
     }
+
+    return None;
+  } else if opt == 'p' { // pretty name
+    let contents = fs::read_to_string("/etc/os-release").ok()?;
+
+    let lines = contents.lines();
+    for line in lines {
+      if line.starts_with("PRETTY_NAME=") {
+        let parts = line.splitn(2, '=').collect::<Vec<_>>();
+        if parts.len() == 2 {
+          // Remove quotes before returning
+          return Some(parts[1].trim().trim_matches('\"').to_owned());
+        }
+      }
+    }
+
+    return None;
   }
 
-  None
+  return None;
 }
 
 fn uname_r() -> String {
@@ -72,9 +100,9 @@ fn get_terminal() -> String {
 }
 
 fn get_distro_ascii() -> String {
-  if get_os_release_pretty_name().unwrap_or("".to_string()).to_ascii_lowercase().contains("arch") { return "   ___               __ \n  / _ |  ____ ____  / / \n / __ | / __// __/ / _ \\\n/_/ |_|/_/   \\__/ /_//_/".to_string(); } 
-  else if get_os_release_pretty_name().unwrap_or("".to_string()).to_ascii_uppercase().contains("debian") { return "   ___      __   _         \n  / _ \\___ / /  (_)__ ____ \n / // / -_) _ \\/ / _ `/ _ \\\n/____/\\__/_.__/_/\\_,_/_//_/".to_string(); }
-  else if get_os_release_pretty_name().unwrap_or("".to_string()).to_ascii_uppercase().contains("fedora") { return "   ____       __             \n  / __/__ ___/ /__  _______ _\n / _// -_) _  / _ \\/ __/ _ `/\n/_/  \\__/\\_,_/\\___/_/  \\_,_/".to_string(); }
-  else if get_os_release_pretty_name().unwrap_or("".to_string()).to_ascii_uppercase().contains("endeavouros") { return "   ____        __                           \n  / __/__  ___/ /__ ___ __  _____  __ ______\n / _// _ \\/ _  / -_) _ `/ |/ / _ \\/ // / __/\n/___/_//_/\\_,_/\\__/\\_,_/|___/\\___/\\_,_/_/   ".to_string(); }
+  if get_os_release_pretty_name('i').unwrap_or("".to_string()).to_ascii_lowercase().contains("arch") { return "   ___               __ \n  / _ |  ____ ____  / / \n / __ | / __// __/ / _ \\\n/_/ |_|/_/   \\__/ /_//_/".to_string(); } 
+  else if get_os_release_pretty_name('i').unwrap_or("".to_string()).to_ascii_uppercase().contains("debian") { return "   ___      __   _         \n  / _ \\___ / /  (_)__ ____ \n / // / -_) _ \\/ / _ `/ _ \\\n/____/\\__/_.__/_/\\_,_/_//_/".to_string(); }
+  else if get_os_release_pretty_name('i').unwrap_or("".to_string()).to_ascii_uppercase().contains("fedora") { return "   ____       __             \n  / __/__ ___/ /__  _______ _\n / _// -_) _  / _ \\/ __/ _ `/\n/_/  \\__/\\_,_/\\___/_/  \\_,_/".to_string(); }
+  else if get_os_release_pretty_name('i').unwrap_or("".to_string()).to_ascii_uppercase().contains("endeavouros") { return "   ____        __                           \n  / __/__  ___/ /__ ___ __  _____  __ ______\n / _// _ \\/ _  / -_) _ `/ |/ / _ \\/ // / __/\n/___/_//_/\\_,_/\\__/\\_,_/|___/\\___/\\_,_/_/   ".to_string(); }
   else { return "   ___           __    ____    __      __ \n  / _ \\__ _____ / /_  / __/__ / /_____/ / \n / , _/ // (_-</ __/ / _// -_) __/ __/ _ \\\n/_/|_|\\_,_/___/\\__/ /_/  \\__/\\__/\\__/_//_/".to_string(); }
 }

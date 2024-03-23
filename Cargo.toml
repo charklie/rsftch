@@ -1,13 +1,13 @@
 [package]
-name = "rustfetch"
+name = "rsftch"
 version = "0.1.0"
 edition = "2021"
 authors = ["Charlie charliejohanid@gmail.com"]
 license = "MIT"
 description = "Lightning fast hardware fetch tool written in rust."
 readme = "README.md"
-repository = "https://github.com/charklie/rustfetch"
-keywords = ["fetch", "rust"]
+repository = "https://github.com/charklie/rsftch"
+keywords = ["fetch", "rust", "neofetch"]
 categories = ["command-line-utilities"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html

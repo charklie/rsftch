@@ -1,4 +1,4 @@
-# Rustfetch
+# RsFtch
 
 ##### _Lightning fast hardware fetch written in rust._
 
@@ -11,11 +11,11 @@
 - Endeavour OS
 
 ### Installation
-- `git clone https://github.com/charklie/rustfetch.git ~/rustfetch/`
-- `cd rustfetch`
+- `git clone https://github.com/charklie/rsftch.git ~/rsftch/`
+- `cd rsftch`
 - `cargo install --release`
 - `export PATH=$PATH:~/.cargo/bin/`
 
 ### Usage
-- `rustfetch`
+- `rsftch`
 

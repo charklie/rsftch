@@ -98,7 +98,6 @@ fn get_terminal() -> String {
 }
 
 fn get_distro_ascii() -> String {
-  println!("{}", get_os_release_pretty_name('i').unwrap_or("".to_string()).to_ascii_lowercase());
   if get_os_release_pretty_name('i').unwrap_or("".to_string()).to_ascii_lowercase().contains("arch") { return "   ___               __ \n  / _ |  ____ ____  / / \n / __ | / __// __/ / _ \\\n/_/ |_|/_/   \\__/ /_//_/".to_string(); } 
   else if get_os_release_pretty_name('i').unwrap_or("".to_string()).to_ascii_uppercase().contains("debian") { return "   ___      __   _         \n  / _ \\___ / /  (_)__ ____ \n / // / -_) _ \\/ / _ `/ _ \\\n/____/\\__/_.__/_/\\_,_/_//_/".to_string(); }
   else if get_os_release_pretty_name('i').unwrap_or("".to_string()).to_ascii_uppercase().contains("fedora") { return "   ____       __             \n  / __/__ ___/ /__  _______ _\n / _// -_) _  / _ \\/ __/ _ `/\n/_/  \\__/\\_,_/\\___/_/  \\_,_/".to_string(); }

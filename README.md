@@ -18,6 +18,7 @@
 - `git clone https://github.com/charklie/rsftch.git ~/rsftch/`
 - `cd rsftch`
 - `cargo install --path .`
+- `export PATH="/home/$USER/.cargo/bin:$PATH"`
 
 ### Usage
 - `rsftch`

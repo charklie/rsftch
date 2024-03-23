@@ -34,12 +34,19 @@ fn cat(path: &str) -> Result<String, String> {
   Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
 }
 
-fn get_os_release_pretty_name() -> Result<String, String> {
-  let output = Command::new("sed")
-    .args(&["-nE", "s@PRETTY_NAME=\"([^\"]*)\"@\\1@p", "/etc/os-release"])
-    .output()
-    .expect("sed failed");
-  Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
+fn get_os_release_pretty_name() -> Option<String> {
+  let output = Command::new("cat").arg("/etc/os-release").output().ok()?;
+  let output_str = String::from_utf8_lossy(&output.stdout);
+
+  let lines = output_str.lines();
+  for line in lines {
+    if line.starts_with("ID=") {
+      let id_str = line.splitn(2, '=').nth(1)?;
+      return Some(id_str.trim().to_owned());
+    }
+  }
+
+  None
 }
 
 fn uname_r() -> String {

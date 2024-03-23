@@ -35,7 +35,6 @@ fn cat(path: &str) -> Result<String, String> {
   Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
 }
 
-<<<<<<< HEAD
 
 fn get_os_release_pretty_name(opt: char) -> Option<String> {
   if opt == 'i' { // id
@@ -74,14 +73,6 @@ fn get_os_release_pretty_name(opt: char) -> Option<String> {
   }
 
   return None;
-=======
-fn get_os_release_pretty_name() -> Result<String, String> {
-  let output = Command::new("sed")
-    .args(&["-nE", "s@ID=\"([^\"]*)\"@\\1@p", "/etc/os-release"])
-    .output()
-    .expect("sed failed");
-  Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
->>>>>>> 37d7e5b (add)
 }
 
 fn uname_r() -> String {
@@ -107,16 +98,9 @@ fn get_terminal() -> String {
 }
 
 fn get_distro_ascii() -> String {
-<<<<<<< HEAD
   if get_os_release_pretty_name('i').unwrap_or("".to_string()).to_ascii_lowercase().contains("arch") { return "   ___               __ \n  / _ |  ____ ____  / / \n / __ | / __// __/ / _ \\\n/_/ |_|/_/   \\__/ /_//_/".to_string(); } 
   else if get_os_release_pretty_name('i').unwrap_or("".to_string()).to_ascii_lowercase().contains("debian") { return "   ___      __   _         \n  / _ \\___ / /  (_)__ ____ \n / // / -_) _ \\/ / _ `/ _ \\\n/____/\\__/_.__/_/\\_,_/_//_/".to_string(); }
   else if get_os_release_pretty_name('i').unwrap_or("".to_string()).to_ascii_lowercase().contains("fedora") { return "   ____       __             \n  / __/__ ___/ /__  _______ _\n / _// -_) _  / _ \\/ __/ _ `/\n/_/  \\__/\\_,_/\\___/_/  \\_,_/".to_string(); }
   else if get_os_release_pretty_name('i').unwrap_or("".to_string()).to_ascii_lowercase().contains("endeavouros") { return "   ____        __                           \n  / __/__  ___/ /__ ___ __  _____  __ ______\n / _// _ \\/ _  / -_) _ `/ |/ / _ \\/ // / __/\n/___/_//_/\\_,_/\\__/\\_,_/|___/\\___/\\_,_/_/   ".to_string(); }
-=======
-  if get_os_release_pretty_name().unwrap_or("".to_string()).to_ascii_lowercase().contains("arch") { return "   ___               __ \n  / _ |  ____ ____  / / \n / __ | / __// __/ / _ \\\n/_/ |_|/_/   \\__/ /_//_/".to_string(); } 
-  else if get_os_release_pretty_name().unwrap_or("".to_string()).to_ascii_uppercase().contains("debian") { return "   ___      __   _         \n  / _ \\___ / /  (_)__ ____ \n / // / -_) _ \\/ / _ `/ _ \\\n/____/\\__/_.__/_/\\_,_/_//_/".to_string(); }
-  else if get_os_release_pretty_name().unwrap_or("".to_string()).to_ascii_uppercase().contains("fedora") { return "   ____       __             \n  / __/__ ___/ /__  _______ _\n / _// -_) _  / _ \\/ __/ _ `/\n/_/  \\__/\\_,_/\\___/_/  \\_,_/".to_string(); }
-  else if get_os_release_pretty_name().unwrap_or("".to_string()).to_ascii_uppercase().contains("endeavouros") { return "   ____        __                           \n  / __/__  ___/ /__ ___ __  _____  __ ______\n / _// _ \\/ _  / -_) _ `/ |/ / _ \\/ // / __/\n/___/_//_/\\_,_/\\__/\\_,_/|___/\\___/\\_,_/_/   ".to_string(); }
->>>>>>> 37d7e5b (add)
   else { return "   ___           __    ____    __      __ \n  / _ \\__ _____ / /_  / __/__ / /_____/ / \n / , _/ // (_-</ __/ / _// -_) __/ __/ _ \\\n/_/|_|\\_,_/___/\\__/ /_/  \\__/\\__/\\__/_//_/".to_string(); }
 }

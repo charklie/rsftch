@@ -4,6 +4,8 @@
 
 ### Screenshots
 
+![image](https://github.com/charklie/rsftch/assets/157241212/04b9514d-d6a0-4be6-bb79-0388cc292558)
+
 ### Supported distros
 - Arch Linux
 - Debian

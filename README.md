@@ -23,3 +23,5 @@
 ### Usage
 - `rsftch`
 
+#### Todo
+- [ ] Add more distros

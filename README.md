@@ -18,7 +18,11 @@
 - `git clone https://github.com/charklie/rsftch.git ~/rsftch/`
 - `cd rsftch`
 - `cargo install --path .`
+
+Add this to your .bashrc / .zshrc if you already dont:
 - `export PATH="/home/$USER/.cargo/bin:$PATH"`
+If you're using fish, run this command if you already haven't:
+- `set -U fish_user_paths ~/.cargo/bin/ $fish_user_paths`
 
 ### Usage
 - `rsftch`

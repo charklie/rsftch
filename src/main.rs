@@ -39,9 +39,9 @@ fn cat(path: &str) -> Result<String, String> {
 fn get_os_release_pretty_name(opt: char) -> Option<String> {
   if opt == 'i' { // id
     let output = Command::new("cat")
-        .arg("/etc/lsb-release")
-        .output()
-        .ok()?;
+      .arg("/etc/lsb-release")
+      .output()
+      .ok()?;
 
     let output_str = String::from_utf8_lossy(&output.stdout);
 

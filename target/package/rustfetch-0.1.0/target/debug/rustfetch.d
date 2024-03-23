@@ -1,0 +1,1 @@
+/home/chararch/Documents/Programming/Rust/rustfetch/target/package/rustfetch-0.1.0/target/debug/rustfetch: /home/chararch/Documents/Programming/Rust/rustfetch/target/package/rustfetch-0.1.0/src/main.rs

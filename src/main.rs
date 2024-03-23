@@ -39,7 +39,7 @@ fn cat(path: &str) -> Result<String, String> {
 fn get_os_release_pretty_name(opt: char) -> Option<String> {
   if opt == 'i' { // id
     let output = Command::new("cat")
-        .arg("/etc/os-release")
+        .arg("/etc/lsb-release")
         .output()
         .ok()?;
 
@@ -47,10 +47,9 @@ fn get_os_release_pretty_name(opt: char) -> Option<String> {
 
     let lines = output_str.lines();
     for line in lines {
-      if line.starts_with("ID=") {
+      if line.starts_with("DISTRIB_ID=") {
         let parts = line.splitn(2, '=').collect::<Vec<_>>();
         if parts.len() == 2 {
-          // Remove quotes before returning
           return Some(parts[1].trim().trim_matches('\"').to_owned());
         }
       }
@@ -58,14 +57,13 @@ fn get_os_release_pretty_name(opt: char) -> Option<String> {
 
     return None;
   } else if opt == 'p' { // pretty name
-    let contents = fs::read_to_string("/etc/os-release").ok()?;
+    let contents = fs::read_to_string("/etc/lsb-release").ok()?;
 
     let lines = contents.lines();
     for line in lines {
-      if line.starts_with("PRETTY_NAME=") {
+      if line.starts_with("DISTRIB_DESCRIPTION=") {
         let parts = line.splitn(2, '=').collect::<Vec<_>>();
         if parts.len() == 2 {
-          // Remove quotes before returning
           return Some(parts[1].trim().trim_matches('\"').to_owned());
         }
       }
@@ -100,6 +98,7 @@ fn get_terminal() -> String {
 }
 
 fn get_distro_ascii() -> String {
+  println!("{}", get_os_release_pretty_name('i').unwrap_or("".to_string()).to_ascii_lowercase());
   if get_os_release_pretty_name('i').unwrap_or("".to_string()).to_ascii_lowercase().contains("arch") { return "   ___               __ \n  / _ |  ____ ____  / / \n / __ | / __// __/ / _ \\\n/_/ |_|/_/   \\__/ /_//_/".to_string(); } 
   else if get_os_release_pretty_name('i').unwrap_or("".to_string()).to_ascii_uppercase().contains("debian") { return "   ___      __   _         \n  / _ \\___ / /  (_)__ ____ \n / // / -_) _ \\/ / _ `/ _ \\\n/____/\\__/_.__/_/\\_,_/_//_/".to_string(); }
   else if get_os_release_pretty_name('i').unwrap_or("".to_string()).to_ascii_uppercase().contains("fedora") { return "   ____       __             \n  / __/__ ___/ /__  _______ _\n / _// -_) _  / _ \\/ __/ _ `/\n/_/  \\__/\\_,_/\\___/_/  \\_,_/".to_string(); }

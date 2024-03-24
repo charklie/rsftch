@@ -137,19 +137,17 @@ fn info(formatting: bool, exclude: i8) {
   
   if exclude != 1  { println!("{}\n", distroascii); }
                     
-                     println!("┏━━━━━━━━━━━━━━┓");
-  if exclude != 2  { println!("┃   {}      ┃  {}", "user", user); }
-  if exclude != 3  { println!("┃ 󰍹  {}  ┃  {}", "hostname", hostname); }
-  if exclude != 4  { println!("┃   {}    ┃  {}", "distro", distro); }
-  if exclude != 5  { println!("┃   {}    ┃  {}", "kernel", kernel); }
-  if exclude != 6  { println!("┃   {}        ┃  {}", "de", desktop); }
-  if exclude != 7  { println!("┃ 󰥔  {}    ┃  {}", "uptime", uptime); }
-  if exclude != 8  { println!("┃   {}     ┃  {}", "shell", shell); }
-  if exclude != 9  { println!("┃   {}  ┃  {}", "terminal", terminal); }
-  if exclude != 10 { println!("┃   {} ┃  {}", "processor", cpu); }
-  if exclude != 11 { println!("┃ 󰕧  {}  ┃  {}", "graphics", gpu); }
-  if exclude != 12 { println!("┃   {}    ┃  {}", "memory", memory); }
-                     println!("┗━━━━━━━━━━━━━━┛");
+  if exclude != 2  { println!("  {}       ~  {}", "user", user); }
+  if exclude != 3  { println!("󰍹  {}   ~  {}", "hostname", hostname); }
+  if exclude != 4  { println!("  {}     ~  {}", "distro", distro); }
+  if exclude != 5  { println!("  {}     ~  {}", "kernel", kernel); }
+  if exclude != 6  { println!("  {}         ~  {}", "de", desktop); }
+  if exclude != 7  { println!("󰥔  {}     ~  {}", "uptime", uptime); }
+  if exclude != 8  { println!("  {}      ~  {}", "shell", shell); }
+  if exclude != 9  { println!("  {}   ~  {}", "terminal", terminal); }
+  if exclude != 10 { println!("  {}  ~  {}", "processor", cpu); }
+  if exclude != 11 { println!("󰕧  {}   ~  {}", "graphics", gpu); }
+  if exclude != 12 { println!("  {}     ~  {}", "memory", memory); }
 }
 
 fn help() {

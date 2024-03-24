@@ -50,6 +50,8 @@ Neofetch: 284.03 milliseconds
 
 Screeenfetch: 832.59 milliseconds
 
+Hyfetch: 1.82 seconds (💀)
+
 ### Compatability
 Currently Rsftch only works on GNU/Linux, (most) BSD distrobrutions and Mac OS, although windows support is planned.  
 

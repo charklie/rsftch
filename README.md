@@ -60,4 +60,4 @@ Currently Rsftch only works on GNU/Linux, (most) BSD distrobrutions and Mac OS, 
 - [ ] Windows Support
 - [X] More info
 - [X] Help Menu
-- [ ] Cleanup memory allocations
+- [X] Cleanup memory allocations

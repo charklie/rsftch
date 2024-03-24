@@ -1,4 +1,4 @@
-# RsFtch
+# Rsftch
 
 ##### _Lightning fast hardware fetch written in rust._
 
@@ -28,5 +28,8 @@ If you're using fish, run this command if you already haven't:
 ### Usage
 - `rsftch`
 
+### Compatability
+Currently Rsftch only works on GNU/Linux and Mac OS, although windows support is planned.  
+
 #### Todo
-- [ ] Add more distros
+- [X] Add more distros

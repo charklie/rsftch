@@ -46,3 +46,4 @@ Currently Rsftch only works on GNU/Linux and Mac OS, although windows support is
 
 #### Todo
 - [X] Add more distros
+- [ ] Change from manual functions to nixinfo to ensure compatability between platforms

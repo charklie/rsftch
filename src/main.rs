@@ -102,7 +102,6 @@ fn info(formatting: bool, exclude: i8) {
   };
 
   
-  
   if exclude != 1  { println!("{}\n", distroascii); }
   if exclude != 2  { println!("  {}       {}", "user", user); }
   if exclude != 3  { println!("󰍹  {}   {}", "hostname", hostname); }

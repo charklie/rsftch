@@ -42,8 +42,13 @@ If you're using fish, run this command if you already haven't:
 - `rsftch`
 
 ### Compatability
-Currently Rsftch only works on GNU/Linux and Mac OS, although windows support is planned.  
+Currently Rsftch only works on GNU/Linux, (most) BSD distrobrutions and Mac OS, although windows support is planned.  
 
 #### Todo
 - [X] Add more distros
-- [ ] Change from manual functions to nixinfo to ensure compatability between platforms
+- [X] Change from manual functions to nixinfo to ensure compatability between platforms
+- [X] Add BSD
+- [ ] Windows Support
+- [X] More info
+- [X] Help Menu
+- [ ] Cleanup memory allocations

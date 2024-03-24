@@ -44,7 +44,7 @@ If you're using fish, run this command if you already haven't:
 - `rsftch`
 
 ### Time comparison
-Rsftch: 128.4 milliseconds
+Rsftch: 102.6 milliseconds
 
 Neofetch: 284.03 milliseconds
 

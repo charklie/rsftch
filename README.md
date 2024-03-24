@@ -11,6 +11,19 @@
 - Debian
 - Fedora
 - Endeavour OS
+- Void Linux
+- Ubuntu
+- OpenSuse
+- Raspbian
+- Linux Mint
+- MX Linux
+- Gentoo
+- Slackware
+- UwUntu
+- NixOS
+- Vanilla Linux
+- Kali Linux
+- CachyOS
 
 * Other distros wont have a custom title, only "Rust Fetch"
 

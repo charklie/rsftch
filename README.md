@@ -43,6 +43,11 @@ If you're using fish, run this command if you already haven't:
 ### Usage
 - `rsftch`
 
+### Time comparison
+Rsftch: 128.4 milliseconds
+Neofetch: 284.03 milliseconds
+Screeenfetch: 832.59 milliseconds
+
 ### Compatability
 Currently Rsftch only works on GNU/Linux, (most) BSD distrobrutions and Mac OS, although windows support is planned.  
 

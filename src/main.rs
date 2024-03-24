@@ -16,11 +16,9 @@ fn main() {
         help();
       } else if arg == "-nc" || arg == "--no-color" {
         info(false, 0);
-      } else if arg == "-e" || arg == "--exclude" {
-        let excluded_index: i8 = args[2].parse::<i8>().unwrap();
-        info(true, excluded_index)
       } else {
-        println!("Flag not found.")
+        println!("Flag not found.");
+        break;
       }
     }
   }
@@ -138,17 +136,20 @@ fn info(formatting: bool, exclude: i8) {
 
   
   if exclude != 1  { println!("{}\n", distroascii); }
-  if exclude != 2  { println!("  {}       {}", "user", user); }
-  if exclude != 3  { println!("󰍹  {}   {}", "hostname", hostname); }
-  if exclude != 4  { println!("  {}     {}", "distro", distro); }
-  if exclude != 5  { println!("  {}     {}", "kernel", kernel); }
-  if exclude != 6  { println!("  {}         {}", "de", desktop); }
-  if exclude != 7  { println!("󰥔  {}     {}", "uptime", uptime); }
-  if exclude != 8  { println!("  {}      {}", "shell", shell); }
-  if exclude != 9  { println!("  {}   {}", "terminal", terminal); }
-  if exclude != 10 { println!("  {}  {}", "processor", cpu); }
-  if exclude != 11 { println!("󰕧  {}   {}", "graphics", gpu); }
-  if exclude != 12 { println!("  {}     {}", "memory", memory); }
+                    
+                     println!("┏━━━━━━━━━━━━━━┓");
+  if exclude != 2  { println!("┃   {}      ┃  {}", "user", user); }
+  if exclude != 3  { println!("┃ 󰍹  {}  ┃  {}", "hostname", hostname); }
+  if exclude != 4  { println!("┃   {}    ┃  {}", "distro", distro); }
+  if exclude != 5  { println!("┃   {}    ┃  {}", "kernel", kernel); }
+  if exclude != 6  { println!("┃   {}        ┃  {}", "de", desktop); }
+  if exclude != 7  { println!("┃ 󰥔  {}    ┃  {}", "uptime", uptime); }
+  if exclude != 8  { println!("┃   {}     ┃  {}", "shell", shell); }
+  if exclude != 9  { println!("┃   {}  ┃  {}", "terminal", terminal); }
+  if exclude != 10 { println!("┃   {} ┃  {}", "processor", cpu); }
+  if exclude != 11 { println!("┃ 󰕧  {}  ┃  {}", "graphics", gpu); }
+  if exclude != 12 { println!("┃   {}    ┃  {}", "memory", memory); }
+                     println!("┗━━━━━━━━━━━━━━┛");
 }
 
 fn help() {
@@ -156,7 +157,6 @@ fn help() {
   println!("{}", "A lightning fast hardware fetch written in rust.".italic());
   println!("\nUsage: rsftch [OPTION...]\n");
   println!("  -h,  --help       Bring up this menu");
-  println!("  -e,  --exclude    Exclude an item");
   println!("  -o,  --override   Override distrobrution, changes ASCII. (not implemented yet)");
   println!("  -nc, --no-color   Removes all colors and formatting.")
 } 

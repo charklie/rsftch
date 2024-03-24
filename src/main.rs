@@ -1,4 +1,4 @@
-use std::process::{Command, Output};
+use std::process::Command;
 use std::env;
 use std::fs;
 use colored::Colorize;
@@ -22,7 +22,6 @@ fn main() {
   }
 }
 
-
 fn info(formatting: bool, exclude: i8) {
   let user = match formatting {
     false => whoami(),
@@ -30,8 +29,8 @@ fn info(formatting: bool, exclude: i8) {
   };
 
   let hostname = match formatting {
-    false => get_hostname(),
-    true  => get_hostname().purple().to_string(),
+    false => uname_n(),
+    true  => uname_n().purple().to_string(),
   };
 
   let distro = match formatting {
@@ -50,8 +49,8 @@ fn info(formatting: bool, exclude: i8) {
   };
  
   let desktop = match formatting {
-    false => get_window_manager_name(),
-    true  => get_window_manager_name().purple().to_string(),
+    false => option_env!("XDG_CURRENT_DESKTOP").unwrap_or_default().to_string().to_string(),
+    true  => option_env!("XDG_CURRENT_DESKTOP").unwrap_or_default().purple().to_string(),
   };
     
   let uptime = match formatting {
@@ -118,25 +117,6 @@ fn whoami() -> String {
   String::from_utf8_lossy(&output.stdout).trim().to_string()
 }
 
-fn get_window_manager_name() -> String {
-    let output: Output = Command::new("wmctrl")
-        .args(&["-m"])
-        .output()
-        .expect("Failed to execute command");
-
-    let output_str = String::from_utf8_lossy(&output.stdout);
-
-    let mut window_manager = "Unknown";
-    for line in output_str.lines() {
-        if line.starts_with("Name:") {
-            window_manager = line.trim().split_whitespace().nth(1).unwrap_or("Unknown");
-            break;
-        }
-    }
-
-    window_manager.to_string()
-}
-
 fn get_os_release_pretty_name(opt: char) -> Option<String> {
   if opt == 'i' { // id
     let output = Command::new("cat")
@@ -187,6 +167,11 @@ fn uname_s() -> String {
   String::from_utf8_lossy(&output.stdout).trim().to_string()
 }
 
+fn uname_n() -> String {
+  let output = Command::new("uname").arg("-n").output().expect("uname failed -n");
+  String::from_utf8_lossy(&output.stdout).trim().to_string()
+}
+
 fn shell_name() -> String {
   let shell = env::var("SHELL").expect("SHELL not set");
   let parts: Vec<&str> = shell.split('/').collect();
@@ -196,11 +181,6 @@ fn shell_name() -> String {
 fn get_terminal() -> String {
   let term = env::var("TERM").unwrap_or("".to_string());
   return term;
-}
-
-fn get_hostname() -> String {
-  let output = Command::new("hostname").output().expect("hostname failed");
-  String::from_utf8_lossy(&output.stdout).trim().to_string()
 }
 
 fn get_distro_ascii() -> String {

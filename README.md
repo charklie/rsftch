@@ -4,7 +4,8 @@
 
 ### Screenshots
 
-![image](https://github.com/charklie/rsftch/assets/157241212/04b9514d-d6a0-4be6-bb79-0388cc292558)
+![image](https://github.com/charklie/rsftch/assets/157241212/0d25e434-e4f5-4a44-84bc-b41227a1482e)
+
 
 ### Supported distros
 - Arch Linux

@@ -3,7 +3,7 @@ use std::env;
 use std::fs;
 use colored::Colorize;
 use pretty_bytes::converter::convert;
-use nixinfo::{gpu, cpu, uptime};
+use nixinfo::uptime;
 use sysinfo::System;
 
 fn main() {
@@ -76,28 +76,6 @@ fn info(formatting: bool, exclude: i8) {
     }
   };
 
-  
-  let cpu = match formatting {
-    false => {
-      match cpu() {
-        Ok(string_from_cpu) => string_from_cpu,
-        Err(error) => {
-          eprintln!("Error from cpu(): {}", error);
-          "".to_string()
-        }
-      }
-    }
-    true => {
-      match cpu() {
-        Ok(string_from_cpu) => string_from_cpu.purple().to_string(),
-        Err(error) => {
-          eprintln!("Error from cpu(): {}", error);
-          "".to_string()
-        }
-      }
-    }
-  };
-
   let shell = match formatting {
     false => shell_name(),
     true  => shell_name().purple().to_string(),
@@ -106,27 +84,6 @@ fn info(formatting: bool, exclude: i8) {
   let terminal = match formatting {
     false => get_terminal(),
     true  => get_terminal().purple().to_string(),
-  };
-
-  let gpu = match formatting {
-    false => {
-      match gpu() {
-        Ok(string_from_gpu) => string_from_gpu,
-        Err(error) => {
-          eprintln!("Error from gpu(): {}", error);
-          "".to_string()
-        }
-      }
-    }
-    true => {
-      match gpu() {
-        Ok(string_from_gpu) => string_from_gpu.purple().to_string(),
-        Err(error) => {
-          eprintln!("Error from gpu(): {}", error);
-          "".to_string()
-        }
-      }
-    }
   };
 
   let memory = match formatting {
@@ -145,9 +102,7 @@ fn info(formatting: bool, exclude: i8) {
   if exclude != 7  { println!("󰥔  {}     ~  {}", "uptime", uptime); }
   if exclude != 8  { println!("  {}      ~  {}", "shell", shell); }
   if exclude != 9  { println!("  {}   ~  {}", "terminal", terminal); }
-  if exclude != 10 { println!("  {}  ~  {}", "processor", cpu); }
-  if exclude != 11 { println!("󰕧  {}   ~  {}", "graphics", gpu); }
-  if exclude != 12 { println!("  {}     ~  {}", "memory", memory); }
+  if exclude != 10 { println!("  {}     ~  {}", "memory", memory); }
 }
 
 fn help() {

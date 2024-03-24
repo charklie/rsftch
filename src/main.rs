@@ -5,7 +5,6 @@ use colored::Colorize;
 use sysinfo::{System, RefreshKind, CpuRefreshKind};
 use pretty_bytes::converter::convert;
 use nixinfo::gpu;
-use regex::Regex;
 
 fn main() {
   let args: Vec<String> = env::args().collect();
@@ -19,6 +18,8 @@ fn main() {
     } else if args[1] == "-e" || args[1] == "--exclude" {
       let excluded_index: i8 = args[2].parse::<i8>().unwrap();
       info(true, excluded_index)
+    } else {
+      println!("Flag not found.")
     }
   }
 }
@@ -77,7 +78,7 @@ fn info(formatting: bool, exclude: i8) {
   let gpu = match formatting {
     false => {
       match gpu() {
-        Ok(string_from_gpu) => remove_outside_brackets(string_from_gpu),
+        Ok(string_from_gpu) => string_from_gpu,
         Err(error) => {
           eprintln!("Error from gpu(): {}", error);
           "".to_string()
@@ -86,7 +87,7 @@ fn info(formatting: bool, exclude: i8) {
     }
     true => {
       match gpu() {
-        Ok(string_from_gpu) => remove_outside_brackets(string_from_gpu.purple().to_string()),
+        Ok(string_from_gpu) => string_from_gpu.purple().to_string(),
         Err(error) => {
           eprintln!("Error from gpu(): {}", error);
           "".to_string()
@@ -126,33 +127,6 @@ fn help() {
   println!("  -nc, --no-color   Removes all colors and formatting.")
 } 
 
-fn remove_outside_brackets(input: String) -> String {
-  let mut result = String::new();
-  let mut in_brackets = false;
-  let mut has_content = false;
-
-  for c in input.chars() {
-    match c {
-      '[' => {
-        in_brackets = true;
-        has_content = false;
-      }
-      ']' => {
-        in_brackets = false;
-        if !has_content {
-          result.pop();
-        }
-      }
-      _ => if in_brackets {
-        result.push(c);
-        has_content = true;
-      }
-    }
-  }
-
-  result
-}
-
 fn whoami() -> String {
   let output = Command::new("whoami").output().expect("whoami failed");
   String::from_utf8_lossy(&output.stdout).trim().to_string()
@@ -162,7 +136,6 @@ fn cat(path: &str) -> Result<String, String> {
   let output = Command::new("cat").arg(path).output().expect("cat failed");
   Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
 }
-
 
 fn get_os_release_pretty_name(opt: char) -> Option<String> {
   if opt == 'i' { // id

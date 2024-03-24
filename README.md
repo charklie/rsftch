@@ -45,7 +45,9 @@ If you're using fish, run this command if you already haven't:
 
 ### Time comparison
 Rsftch: 128.4 milliseconds
+
 Neofetch: 284.03 milliseconds
+
 Screeenfetch: 832.59 milliseconds
 
 ### Compatability

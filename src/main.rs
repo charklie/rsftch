@@ -12,17 +12,16 @@ fn main() {
     info(true, 0);
   } else {
     for arg in &args {
+      println!("{}", arg);
       if arg == "-h" || arg == "--help" || arg == "--usage" {
         help();
       } else if arg == "-nc" || arg == "--no-color" {
-        info(false, 0);
-      } else {
-        println!("Flag not found.");
-        break;
+        info(false, 0); 
       }
     }
   }
 }
+
 
 fn info(formatting: bool, exclude: i8) {
   let user = match formatting {

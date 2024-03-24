@@ -1,25 +1,27 @@
-use std::process::Command;
+use std::process::{Command, Output};
 use std::env;
 use std::fs;
 use colored::Colorize;
-use sysinfo::{System, RefreshKind, CpuRefreshKind};
 use pretty_bytes::converter::convert;
-use nixinfo::gpu;
+use nixinfo::{gpu, cpu, uptime};
+use sysinfo::System;
 
 fn main() {
   let args: Vec<String> = env::args().collect();
-
-  if args.len() == 1 { info(true, 0) }
-  else { 
-    if args[1] == "-h" || args[1] == "--help" {
-      help()
-    } else if args[1] == "-nc" || args[1] == "--no-color" {
-      info(false, 0);
-    } else if args[1] == "-e" || args[1] == "--exclude" {
-      let excluded_index: i8 = args[2].parse::<i8>().unwrap();
-      info(true, excluded_index)
-    } else {
-      println!("Flag not found.")
+  if args.len() == 1 {
+    info(true, 0);
+  } else {
+    for arg in &args {
+      if arg == "-h" || arg == "--help" || arg == "--usage" {
+        help();
+      } else if arg == "-nc" || arg == "--no-color" {
+        info(false, 0);
+      } else if arg == "-e" || arg == "--exclude" {
+        let excluded_index: i8 = args[2].parse::<i8>().unwrap();
+        info(true, excluded_index)
+      } else {
+        println!("Flag not found.")
+      }
     }
   }
 }
@@ -31,8 +33,8 @@ fn info(formatting: bool, exclude: i8) {
   };
 
   let hostname = match formatting {
-    false => cat("/etc/hostname").unwrap(),
-    true  => cat("/etc/hostname").unwrap().purple().to_string(),
+    false => get_hostname(),
+    true  => get_hostname().purple().to_string(),
   };
 
   let distro = match formatting {
@@ -49,15 +51,53 @@ fn info(formatting: bool, exclude: i8) {
     false => uname_r(),
     true  => uname_r().purple().to_string(),
   };
-
-  let desktop = match formatting { 
-    false => option_env!("XDG_CURRENT_DESKTOP").unwrap_or("").to_string(),
-    true  => option_env!("XDG_CURRENT_DESKTOP").unwrap_or("").purple().to_string(),
+ 
+  let desktop = match formatting {
+    false => get_window_manager_name(),
+    true  => get_window_manager_name().purple().to_string(),
+  };
+    
+  let uptime = match formatting {
+    false => {
+      match uptime() {
+        Ok(string_from_uptime) => string_from_uptime,
+        Err(error) => {
+          eprintln!("Error from uptime(): {}", error);
+          "".to_string()
+        }
+      }
+    }
+    true => {
+      match uptime() {
+        Ok(string_from_uptime) => string_from_uptime.purple().to_string(),
+        Err(error) => {
+          eprintln!("Error from uptime(): {}", error);
+          "".to_string()
+        }
+      }
+    }
   };
 
-  let uptime = match formatting {
-    false => get_uptime(),
-    true  => get_uptime().purple().to_string(),
+  
+  let cpu = match formatting {
+    false => {
+      match cpu() {
+        Ok(string_from_cpu) => string_from_cpu,
+        Err(error) => {
+          eprintln!("Error from cpu(): {}", error);
+          "".to_string()
+        }
+      }
+    }
+    true => {
+      match cpu() {
+        Ok(string_from_cpu) => string_from_cpu.purple().to_string(),
+        Err(error) => {
+          eprintln!("Error from cpu(): {}", error);
+          "".to_string()
+        }
+      }
+    }
   };
 
   let shell = match formatting {
@@ -68,11 +108,6 @@ fn info(formatting: bool, exclude: i8) {
   let terminal = match formatting {
     false => get_terminal(),
     true  => get_terminal().purple().to_string(),
-  };
-
-  let processor = match formatting {
-    false => get_processor(),
-    true  => get_processor().purple().to_string(),
   };
 
   let gpu = match formatting {
@@ -111,7 +146,7 @@ fn info(formatting: bool, exclude: i8) {
   if exclude != 7  { println!("󰥔  {}     {}", "uptime", uptime); }
   if exclude != 8  { println!("  {}      {}", "shell", shell); }
   if exclude != 9  { println!("  {}   {}", "terminal", terminal); }
-  if exclude != 10 { println!("  {}  {}", "processor", processor); }
+  if exclude != 10 { println!("  {}  {}", "processor", cpu); }
   if exclude != 11 { println!("󰕧  {}   {}", "graphics", gpu); }
   if exclude != 12 { println!("  {}     {}", "memory", memory); }
 }
@@ -131,9 +166,30 @@ fn whoami() -> String {
   String::from_utf8_lossy(&output.stdout).trim().to_string()
 }
 
+/*
 fn cat(path: &str) -> Result<String, String> {
   let output = Command::new("cat").arg(path).output().expect("cat failed");
   Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
+}
+*/
+
+fn get_window_manager_name() -> String {
+    let output: Output = Command::new("wmctrl")
+        .args(&["-m"])
+        .output()
+        .expect("Failed to execute command");
+
+    let output_str = String::from_utf8_lossy(&output.stdout);
+
+    let mut window_manager = "Unknown";
+    for line in output_str.lines() {
+        if line.starts_with("Name:") {
+            window_manager = line.trim().split_whitespace().nth(1).unwrap_or("Unknown");
+            break;
+        }
+    }
+
+    window_manager.to_string()
 }
 
 fn get_os_release_pretty_name(opt: char) -> Option<String> {
@@ -171,11 +227,26 @@ fn get_os_release_pretty_name(opt: char) -> Option<String> {
   return None;
 }
 
-fn get_processor() -> String {
-  let s = System::new_with_specifics(RefreshKind::new().with_cpu(CpuRefreshKind::everything()));
-  for cpu in s.cpus() {return cpu.brand().to_string(); }
-  return "Unknown".to_string();
+/*
+fn get_wm_pretty_name() -> Option<String> {
+  let output = Command::new("wmctrl")
+    .arg("-m")
+    .output()
+    .ok()?;
+
+  let output_str = String::from_utf8_lossy(&output.stdout);
+  let lines = output_str.lines();
+  for line in lines {
+    if line.starts_with("Name:") {
+      let parts = line.splitn(2, ':').collect::<Vec<_>>();
+      if parts.len() == 2 {
+        return Some(parts[1].trim().trim_matches('\"').to_owned());
+      }
+    }
+  }
+  return None;
 }
+*/
 
 fn get_mem() -> String {
   let sys = System::new_all();
@@ -183,14 +254,13 @@ fn get_mem() -> String {
 }
 
 fn uname_r() -> String {
-  let output = Command::new("uname").arg("-r").output().expect("uname failed");
+  let output = Command::new("uname").arg("-r").output().expect("uname failed -r");
   String::from_utf8_lossy(&output.stdout).trim().to_string()
 }
 
-fn get_uptime() -> String {
-  let output = Command::new("uptime").arg("-p").output().expect("uptime failed");
-  let uptime = String::from_utf8_lossy(&output.stdout[..output.stdout.splitn(2, |b| *b == b'l').next().unwrap().len()]).trim().to_string();
-  return uptime;
+fn uname_s() -> String {
+  let output = Command::new("uname").arg("-s").output().expect("uname failed -s");
+  String::from_utf8_lossy(&output.stdout).trim().to_string()
 }
 
 fn shell_name() -> String {
@@ -202,6 +272,11 @@ fn shell_name() -> String {
 fn get_terminal() -> String {
   let term = env::var("TERM").unwrap_or("".to_string());
   return term;
+}
+
+fn get_hostname() -> String {
+  let output = Command::new("hostname").output().expect("hostname failed");
+  String::from_utf8_lossy(&output.stdout).trim().to_string()
 }
 
 fn get_distro_ascii() -> String {
@@ -222,5 +297,7 @@ fn get_distro_ascii() -> String {
   else if get_os_release_pretty_name('i').unwrap_or("".to_string()).to_ascii_lowercase().contains("vanilla")     { return "  _   __          _ ____    \n | | / /__ ____  (_) / /__ _\n | |/ / _ `/ _ \\n/ / / / _ `/\n |___/\\_,_/_//_/_/_/_/\\_,_/".to_string(); }
   else if get_os_release_pretty_name('i').unwrap_or("".to_string()).to_ascii_lowercase().contains("kali")        { return "   __ __     ___   \n  / //_/__ _/ (_)  \n / ,< / _ `/ / /   \n/_/|_|\\_,_/_/_/".to_string(); }
   else if get_os_release_pretty_name('i').unwrap_or("".to_string()).to_ascii_lowercase().contains("cachy")       { return "  _____         __       \n / ___/__ _____/ /  __ __\n/ /__/ _ `/ __/ _ \\/ // /\n\\___/\\_,_/\\__/_//_/\\_, / \n                  /___/".to_string(); }
+  if      uname_s().to_ascii_lowercase().contains("netbsd")  { return "   _  __    __  ___  _______ \n  / |/ /__ / /_/ _ )/ __/ _ \\\n /    / -_) __/ _  |\\ \\/ // /\n/_/|_/\\__/\\__/____/___/____/ ".to_string(); }
+  else if uname_s().to_ascii_lowercase().contains("freebsd") { return "   ___            ___  _______ \n  / _/______ ___ / _ )/ __/ _ \\\n / _/ __/ -_) -_) _  |\\ \\/ // /\n/_//_/  \\__/\\__/____/___/____/".to_string(); }
   else { return "   ___           __    ____    __      __ \n  / _ \\__ _____ / /_  / __/__ / /_____/ / \n / , _/ // (_-</ __/ / _// -_) __/ __/ _ \\\n/_/|_|\\_,_/___/\\__/ /_/  \\__/\\__/\\__/_//_/".to_string(); }
- }
+}

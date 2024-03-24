@@ -94,15 +94,15 @@ fn info(formatting: bool, exclude: i8) {
   
   if exclude != 1  { println!("{}\n", distroascii); }
                     
-  if exclude != 2  { println!("  {}       ~  {}", "user", user); }
-  if exclude != 3  { println!("󰍹  {}   ~  {}", "hostname", hostname); }
-  if exclude != 4  { println!("  {}     ~  {}", "distro", distro); }
-  if exclude != 5  { println!("  {}     ~  {}", "kernel", kernel); }
-  if exclude != 6  { println!("  {}         ~  {}", "de", desktop); }
-  if exclude != 7  { println!("󰥔  {}     ~  {}", "uptime", uptime); }
-  if exclude != 8  { println!("  {}      ~  {}", "shell", shell); }
-  if exclude != 9  { println!("  {}   ~  {}", "terminal", terminal); }
-  if exclude != 10 { println!("  {}     ~  {}", "memory", memory); }
+  if exclude != 2  { println!("  {}      ~  {}", "user", user); }
+  if exclude != 3  { println!("󰍹  {}  ~  {}", "hostname", hostname); }
+  if exclude != 4  { println!("  {}    ~  {}", "distro", distro); }
+  if exclude != 5  { println!("  {}    ~  {}", "kernel", kernel); }
+  if exclude != 6  { println!("  {}        ~  {}", "de", desktop); }
+  if exclude != 7  { println!("󰥔  {}    ~  {}", "uptime", uptime); }
+  if exclude != 8  { println!("  {}     ~  {}", "shell", shell); }
+  if exclude != 9  { println!("  {}  ~  {}", "terminal", terminal); }
+  if exclude != 10 { println!("  {}    ~  {}", "memory", memory); }
 }
 
 fn help() {
@@ -118,13 +118,6 @@ fn whoami() -> String {
   let output = Command::new("whoami").output().expect("whoami failed");
   String::from_utf8_lossy(&output.stdout).trim().to_string()
 }
-
-/*
-fn cat(path: &str) -> Result<String, String> {
-  let output = Command::new("cat").arg(path).output().expect("cat failed");
-  Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
-}
-*/
 
 fn get_window_manager_name() -> String {
     let output: Output = Command::new("wmctrl")
@@ -179,27 +172,6 @@ fn get_os_release_pretty_name(opt: char) -> Option<String> {
   }
   return None;
 }
-
-/*
-fn get_wm_pretty_name() -> Option<String> {
-  let output = Command::new("wmctrl")
-    .arg("-m")
-    .output()
-    .ok()?;
-
-  let output_str = String::from_utf8_lossy(&output.stdout);
-  let lines = output_str.lines();
-  for line in lines {
-    if line.starts_with("Name:") {
-      let parts = line.splitn(2, ':').collect::<Vec<_>>();
-      if parts.len() == 2 {
-        return Some(parts[1].trim().trim_matches('\"').to_owned());
-      }
-    }
-  }
-  return None;
-}
-*/
 
 fn get_mem() -> String {
   let sys = System::new_all();

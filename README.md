@@ -24,6 +24,8 @@
 - Vanilla Linux
 - Kali Linux
 - CachyOS
+- FreeBSD
+- NetBSD
 
 * Other distros wont have a custom title, only "Rust Fetch"
 

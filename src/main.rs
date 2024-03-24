@@ -12,12 +12,8 @@ fn main() {
     info(true, 0);
   } else {
     for arg in &args {
-      println!("{}", arg);
-      if arg == "-h" || arg == "--help" || arg == "--usage" {
-        help();
-      } else if arg == "-nc" || arg == "--no-color" {
-        info(false, 0); 
-      }
+      if arg == "-h" || arg == "--help" || arg == "--usage" { help(); } 
+      else if arg == "-nc" || arg == "--no-color" { info(false, 0); }
     }
   }
 }

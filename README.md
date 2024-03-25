@@ -57,10 +57,5 @@ Hyfetch: 1.82 seconds (💀)
 Currently Rsftch only works on GNU/Linux, (most) BSD distrobrutions and Mac OS, although windows support is planned.  
 
 #### Todo
-- [X] Add more distros
-- [X] Change from manual functions to nixinfo to ensure compatability between platforms
-- [X] Add BSD
+- [ ] Add more distros
 - [ ] Windows Support
-- [X] More info
-- [X] Help Menu
-- [X] Cleanup memory allocations

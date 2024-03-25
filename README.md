@@ -32,7 +32,7 @@
 
 ### Installation
 - `git clone https://github.com/charklie/rsftch.git ~/rsftch/`
-- `cd rsftch`
+- `cd ~/rsftch/`
 - `cargo install --path .`
 
 Add this to your .bashrc / .zshrc if you already dont:

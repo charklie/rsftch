@@ -124,7 +124,7 @@ fn help() {
     println!("{}", "Written by charklie.".italic());
     println!("\nUsage: rsftch [OPTION...]\n");
     println!("  -h,  --help       Bring up this menu");
-    println!("  -o,  --override   Override distrobrution, changes ASCII. (not implemented yet)");
+    println!("  -o,  --override   Override distribution, changes ASCII. (not implemented yet)");
     println!("  -nc, --no-color   Removes all colors and formatting.");
     println!("  -t,  --tree       Enables tree mode.");
 }

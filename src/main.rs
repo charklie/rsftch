@@ -1,10 +1,11 @@
 use std::process::Command;
 use std::env;
 use std::fs;
+
 use colored::Colorize;
-use pretty_bytes::converter::convert;
 use nixinfo::uptime;
-use sysinfo::System;
+use libmacchina::MemoryReadout;
+use libmacchina::traits::MemoryReadout as _;
 
 fn main() {
   let args: Vec<String> = env::args().collect();
@@ -27,11 +28,6 @@ fn info(formatting: bool, exclude: i8) {
   let hostname = match formatting {
     false => uname_n(),
     true  => uname_n().purple().to_string(),
-  };
-
-  let distro = match formatting {
-    false => get_os_release_pretty_name('p').unwrap_or("".to_string()),
-    true  => get_os_release_pretty_name('p').unwrap_or("".to_string()).purple().to_string(),
   };
 
   let distroascii = match formatting {
@@ -86,17 +82,15 @@ fn info(formatting: bool, exclude: i8) {
   };
 
   
-  if exclude != 1  { println!("{}\n", distroascii); }
-                    
-  if exclude != 2  { println!("  {}      ~  {}", "user", user); }
-  if exclude != 3  { println!("󰍹  {}  ~  {}", "hostname", hostname); }
-  if exclude != 4  { println!("  {}    ~  {}", "distro", distro); }
-  if exclude != 5  { println!("  {}    ~  {}", "kernel", kernel); }
-  if exclude != 6  { println!("  {}        ~  {}", "de", desktop); }
-  if exclude != 7  { println!("󰥔  {}    ~  {}", "uptime", uptime); }
-  if exclude != 8  { println!("  {}     ~  {}", "shell", shell); }
-  if exclude != 9  { println!("  {}  ~  {}", "terminal", terminal); }
-  if exclude != 10 { println!("  {}    ~  {}", "memory", memory); }
+  if exclude != 1 { println!("{}\n", distroascii); }
+  if exclude != 2 { println!("  {}      ~  {}", "user", user); }
+  if exclude != 3 { println!("󰍹  {}  ~  {}", "hostname", hostname); }
+  if exclude != 4 { println!("  {}    ~  {}", "kernel", kernel); }
+  if exclude != 5 { println!("  {}        ~  {}", "de", desktop); }
+  if exclude != 6 { println!("󰥔  {}    ~  {}", "uptime", uptime); }
+  if exclude != 7 { println!("  {}     ~  {}", "shell", shell); }
+  if exclude != 8 { println!("  {}  ~  {}", "terminal", terminal); }
+  if exclude != 9 { println!("  {}    ~  {}", "memory", memory); }
 }
 
 fn help() {
@@ -148,9 +142,20 @@ fn get_os_release_pretty_name(opt: char) -> Option<String> {
   return None;
 }
 
+fn format_bytes(kbytes: u64) -> String {
+    const MIB: u64 = 1048576;
+    format!("{:.2} GiB", kbytes as f64 / MIB as f64)
+}
+
 fn get_mem() -> String {
-  let sys = System::new_all();
-  return format!("{} / {}", convert(sys.used_memory() as f64), convert(sys.total_memory() as f64));
+    let mem_readout = MemoryReadout::new();
+    let total_mem = mem_readout.total().unwrap_or(0);
+    let used_mem = mem_readout.used().unwrap_or(0);
+
+    let total_mem_str = format_bytes(total_mem);
+    let used_mem_str = format_bytes(used_mem);
+
+    format!("{} / {}", used_mem_str, total_mem_str)
 }
 
 fn uname_r() -> String {

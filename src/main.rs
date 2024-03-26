@@ -1,6 +1,8 @@
 use std::env;
 use std::fs;
+use std::fs::File;
 use std::process::Command;
+use std::io::Read;
 use colored::Colorize;
 use libmacchina::traits::MemoryReadout as _;
 use libmacchina::MemoryReadout;
@@ -46,14 +48,8 @@ fn info(formatting: bool, tree: bool) {
     };
 
     let desktop = match formatting {
-        false => option_env!("XDG_CURRENT_DESKTOP")
-            .unwrap_or_default()
-            .to_string()
-            .to_string(),
-        true => option_env!("XDG_CURRENT_DESKTOP")
-            .unwrap_or_default()
-            .purple()
-            .to_string(),
+        false => get_wm(),
+        true  => get_wm().purple().to_string(),
     };
 
     let uptime = match formatting {
@@ -170,6 +166,30 @@ fn get_os_release_pretty_name(opt: char) -> Option<String> {
 fn format_bytes(kbytes: u64) -> String {
     const MIB: u64 = 1048576;
     format!("{:.2} GiB", kbytes as f64 / MIB as f64)
+}
+
+fn get_wm() -> String {
+    if env::var("DISPLAY").is_err() {
+        return String::new();
+    }
+
+    for env_var in &["XDG_SESSION_DESKTOP", "XDG_CURRENT_DESKTOP", "DESKTOP_SESSION"] {
+        if let Ok(de) = env::var(env_var) {
+            return de;
+        }
+    }
+
+    let path = format!("{}/.xinitrc", env::var("HOME").unwrap_or_default());
+    if let Ok(mut file) = File::open(&path) {
+        let mut buf = String::new();
+        if file.read_to_string(&mut buf).is_ok() {
+            if let Some(last_line) = buf.lines().last() {
+                let last_word = last_line.split(' ').last().unwrap_or("");
+                return last_word.to_string();
+            }
+        }
+    }
+    String::new()
 }
 
 fn get_mem() -> String {

@@ -1,0 +1,11 @@
+/home/chararch/Documents/Programming/Rust/rsftch/target/debug/deps/libpciid_parser-c46b9453f10f4fb5.rmeta: /home/chararch/.cargo/registry/src/index.crates.io-6f17d22bba15001f/pciid-parser-0.6.3/src/lib.rs /home/chararch/.cargo/registry/src/index.crates.io-6f17d22bba15001f/pciid-parser-0.6.3/src/error.rs /home/chararch/.cargo/registry/src/index.crates.io-6f17d22bba15001f/pciid-parser-0.6.3/src/parser.rs /home/chararch/.cargo/registry/src/index.crates.io-6f17d22bba15001f/pciid-parser-0.6.3/src/schema.rs /home/chararch/.cargo/registry/src/index.crates.io-6f17d22bba15001f/pciid-parser-0.6.3/src/../README.md
+
+/home/chararch/Documents/Programming/Rust/rsftch/target/debug/deps/libpciid_parser-c46b9453f10f4fb5.rlib: /home/chararch/.cargo/registry/src/index.crates.io-6f17d22bba15001f/pciid-parser-0.6.3/src/lib.rs /home/chararch/.cargo/registry/src/index.crates.io-6f17d22bba15001f/pciid-parser-0.6.3/src/error.rs /home/chararch/.cargo/registry/src/index.crates.io-6f17d22bba15001f/pciid-parser-0.6.3/src/parser.rs /home/chararch/.cargo/registry/src/index.crates.io-6f17d22bba15001f/pciid-parser-0.6.3/src/schema.rs /home/chararch/.cargo/registry/src/index.crates.io-6f17d22bba15001f/pciid-parser-0.6.3/src/../README.md
+
+/home/chararch/Documents/Programming/Rust/rsftch/target/debug/deps/pciid_parser-c46b9453f10f4fb5.d: /home/chararch/.cargo/registry/src/index.crates.io-6f17d22bba15001f/pciid-parser-0.6.3/src/lib.rs /home/chararch/.cargo/registry/src/index.crates.io-6f17d22bba15001f/pciid-parser-0.6.3/src/error.rs /home/chararch/.cargo/registry/src/index.crates.io-6f17d22bba15001f/pciid-parser-0.6.3/src/parser.rs /home/chararch/.cargo/registry/src/index.crates.io-6f17d22bba15001f/pciid-parser-0.6.3/src/schema.rs /home/chararch/.cargo/registry/src/index.crates.io-6f17d22bba15001f/pciid-parser-0.6.3/src/../README.md
+
+/home/chararch/.cargo/registry/src/index.crates.io-6f17d22bba15001f/pciid-parser-0.6.3/src/lib.rs:
+/home/chararch/.cargo/registry/src/index.crates.io-6f17d22bba15001f/pciid-parser-0.6.3/src/error.rs:
+/home/chararch/.cargo/registry/src/index.crates.io-6f17d22bba15001f/pciid-parser-0.6.3/src/parser.rs:
+/home/chararch/.cargo/registry/src/index.crates.io-6f17d22bba15001f/pciid-parser-0.6.3/src/schema.rs:
+/home/chararch/.cargo/registry/src/index.crates.io-6f17d22bba15001f/pciid-parser-0.6.3/src/../README.md:

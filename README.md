@@ -59,3 +59,4 @@ Currently Rsftch only works on GNU/Linux, (most) BSD distributions and Mac OS, a
 #### Todo
 - [ ] Add more distros
 - [ ] Windows Support
+- [ ] Split up `main.rs` into multiple files.

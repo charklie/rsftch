@@ -106,12 +106,11 @@ fn info(formatting: bool, tree: bool) {
         println!("╰   {}        ~  {}", "de", desktop);
     } else if !tree {
         println!("{}\n", distroascii);
-        println!("  {}        ~  {}", "OS", os);
-        println!("󰍹  {}  ~  {}", "hostname", hostname);
+        println!("  {}      ~  {}@{}", "user", user, hostname);
+        println!("󰣇  {}        ~  {}", "OS", os);
         println!("  {}    ~  {}", "kernel", kernel);
-        println!("  {}    ~  {}", "memory", memory);
+        println!("  {}    ~  {}", "memory", memory);
         println!("󰥔  {}    ~  {}", "uptime", uptime);
-        println!("  {}      ~  {}", "user", user);
         println!("  {}  ~  {}", "terminal", terminal);
         println!("  {}     ~  {}", "shell", shell);
         println!("  {}        ~  {}", "de", desktop);

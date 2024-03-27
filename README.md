@@ -41,6 +41,17 @@ Add this to your .bashrc / .zshrc if you already dont:
 If you're using fish, run this command if you already haven't:
 - `set -U fish_user_paths ~/.cargo/bin/ $fish_user_paths`
 
+#### NetBSD
+If you are on NetBSD or, any supported pkgsrc platform, a pre-compiled binary is available from the official repositories.
+To install it, simply run:
+`pkgin install rsftch`
+
+Or, if you prefer to build it from source:
+```
+cd /usr/pkgsrc/sysutils/rsftch
+make install
+```
+
 ### Usage
 - `rsftch`
 

@@ -1,1 +1,0 @@
-/home/chararch/Documents/Programming/Rust/rsftch/target/debug/rsftch: /home/chararch/Documents/Programming/Rust/rsftch/src/main.rs /home/chararch/Documents/Programming/Rust/rsftch/src/mods/ascii.rs /home/chararch/Documents/Programming/Rust/rsftch/src/mods/fn.rs

@@ -1,6 +1,6 @@
 use colored::Colorize;
 use libmacchina::{traits::MemoryReadout as _, MemoryReadout};
-use std::{env, fs, fs::File, io::Read, process::Command};
+use std::{env, fs::File, io::Read, process::Command};
 
 pub fn help() {
     println!("{}", "Rsftch".bold());
@@ -19,18 +19,24 @@ pub fn whoami() -> String {
 }
 
 pub fn get_os_release_pretty_name() -> Option<String> {
-    let output = Command::new("distro").output().ok()?;
-    let output_str = String::from_utf8_lossy(&output.stdout);
-    let lines = output_str.lines();
-    for line in lines {
-        if line.starts_with("Name: ") {
-            let parts = line.splitn(2, '=').collect::<Vec<_>>();
-            if parts.len() == 2 {
-                return Some(parts[1].trim().trim_matches('\"').to_owned());
-            }
+    let output = match Command::new("distro").output() {
+        Ok(output) => output,
+        Err(_) => return None,
+    };
+
+    if !output.status.success() {
+        return None;
+    }
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    for line in stdout.lines() {
+        if line.starts_with("Name:") {
+            let name = line.split(':').nth(1)?.trim();
+            return Some(name.to_string());
         }
     }
-    return None;
+
+    None
 }
 
 pub fn format_bytes(kbytes: u64) -> String {

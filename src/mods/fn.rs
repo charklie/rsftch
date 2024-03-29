@@ -18,36 +18,17 @@ pub fn whoami() -> String {
     String::from_utf8_lossy(&output.stdout).trim().to_string()
 }
 
-pub fn get_os_release_pretty_name(opt: char) -> Option<String> {
-    if opt == 'i' {
-        // id
-        let output = Command::new("cat").arg("/etc/lsb-release").output().ok()?;
-
-        let output_str = String::from_utf8_lossy(&output.stdout);
-        let lines = output_str.lines();
-        for line in lines {
-            if line.starts_with("DISTRIB_ID=") {
-                let parts = line.splitn(2, '=').collect::<Vec<_>>();
-                if parts.len() == 2 {
-                    return Some(parts[1].trim().trim_matches('\"').to_owned());
-                }
+pub fn get_os_release_pretty_name() -> Option<String> {
+    let output = Command::new("distro").output().ok()?;
+    let output_str = String::from_utf8_lossy(&output.stdout);
+    let lines = output_str.lines();
+    for line in lines {
+        if line.starts_with("Name: ") {
+            let parts = line.splitn(2, '=').collect::<Vec<_>>();
+            if parts.len() == 2 {
+                return Some(parts[1].trim().trim_matches('\"').to_owned());
             }
         }
-        return None;
-    } else if opt == 'p' {
-        // pretty name
-        let contents = fs::read_to_string("/etc/lsb-release").ok()?;
-
-        let lines = contents.lines();
-        for line in lines {
-            if line.starts_with("DISTRIB_DESCRIPTION=") {
-                let parts = line.splitn(2, '=').collect::<Vec<_>>();
-                if parts.len() == 2 {
-                    return Some(parts[1].trim().trim_matches('\"').to_owned());
-                }
-            }
-        }
-        return None;
     }
     return None;
 }

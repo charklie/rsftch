@@ -31,18 +31,24 @@
 * Other distros wont have a custom title, only "Rust Fetch"
 
 ### Installation
-- `git clone https://github.com/charklie/rsftch.git ~/rsftch/`
-- `cd ~/rsftch/`
-- `cargo install --path .`
+#### Cargo
+`cargo install rsftch`
+
+#### Source
+```
+git clone https://github.com/charklie/rsftch.git ~/rsftch/`
+cd ~/rsftch/
+cargo install --path .
+```
 
 Add this to your .bashrc / .zshrc if you already dont:
-- `export PATH="/home/$USER/.cargo/bin:$PATH"`
+`export PATH="/home/$USER/.cargo/bin:$PATH"`
   
 If you're using fish, run this command if you already haven't:
-- `set -U fish_user_paths ~/.cargo/bin/ $fish_user_paths`
+`set -U fish_user_paths ~/.cargo/bin/ $fish_user_paths`
 
 #### NetBSD
-If you are on NetBSD or, any supported pkgsrc platform, a pre-compiled binary is available from the official repositories.
+If you're on NetBSD or, any supported pkgsrc platform, a pre-compiled binary is available from the official repositories.
 To install it, simply run:
 `pkgin install rsftch`
 
@@ -53,7 +59,7 @@ make install
 ```
 
 ### Usage
-- `rsftch`
+`rsftch`
 
 ### Time comparison
 Rsftch: 2.94 milliseconds
@@ -65,9 +71,9 @@ Screeenfetch: 832.59 milliseconds
 Hyfetch: 1.82 seconds (💀)
 
 ### Compatability
-Currently Rsftch only works on GNU/Linux, (most) BSD distributions and Mac OS, although windows support is planned.  
+Currently Rsftch only works on GNU/Linux, (most) BSD distributions and (probably) Mac OS, although windows support is planned.  
 
 #### Todo
 - [ ] Add more distros
 - [ ] Windows Support
-- [ ] Split up `main.rs` into multiple files.
+- [x] Split up `main.rs` into multiple files.

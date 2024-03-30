@@ -94,14 +94,14 @@ fn info(formatting: bool, tree: bool) {
     if tree {
         println!("{}\n", distroascii);
         println!("  {}          ~  {}", "OS", os);
-        println!("┠ 󰍹  {}  ~  {}", "hostname", hostname);
-        println!("┠   {}    ~  {}", "kernel", kernel);
-        println!("┠   {}    ~  {}", "memory", memory);
-        println!("╰ 󰥔  {}    ~  {}\n", "uptime", uptime);
+        println!("├─󰍹  {}  ~  {}", "hostname", hostname);
+        println!("├─  {}    ~  {}", "kernel", kernel);
+        println!("├─  {}    ~  {}", "memory", memory);
+        println!("╰─󰥔  {}    ~  {}\n", "uptime", uptime);
         println!("  {}        ~  {}", "user", user);
-        println!("┠   {}  ~  {}", "terminal", terminal);
-        println!("┠   {}     ~  {}", "shell", shell);
-        println!("╰   {}        ~  {}", "de", desktop);
+        println!("├─  {}  ~  {}", "terminal", terminal);
+        println!("├─  {}     ~  {}", "shell", shell);
+        println!("╰─  {}        ~  {}", "de", desktop);
     } else if !tree {
         println!("{}\n", distroascii);
         println!("  {}      ~  {}@{}", "user", user, hostname);

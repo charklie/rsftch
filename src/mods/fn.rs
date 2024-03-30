@@ -1,6 +1,6 @@
 use colored::Colorize;
 use libmacchina::{traits::MemoryReadout as _, MemoryReadout};
-use std::{env, fs::File, io::Read, process::Command};
+use std::{env, fs::File, io::Read, process::Command, process::Output};
 
 pub fn help() {
     println!("{}", "Rsftch".bold());
@@ -19,24 +19,21 @@ pub fn whoami() -> String {
 }
 
 pub fn get_os_release_pretty_name() -> Option<String> {
-    let output = match Command::new("distro").output() {
+    let output: Output = match Command::new("bash")
+        .arg("-c")
+        .arg("awk -F'=' '/^ID=/ {print tolower($2)}' /etc/*-release 2> /dev/null")
+        .output()
+    {
         Ok(output) => output,
         Err(_) => return None,
     };
 
-    if !output.status.success() {
-        return None;
+    if output.status.success() {
+        let stdout = String::from_utf8(output.stdout).ok()?;
+        Some(stdout.trim().to_string())
+    } else {
+        None
     }
-
-    let stdout = String::from_utf8_lossy(&output.stdout);
-    for line in stdout.lines() {
-        if line.starts_with("Name:") {
-            let name = line.split(':').nth(1)?.trim();
-            return Some(name.to_string());
-        }
-    }
-
-    None
 }
 
 pub fn format_bytes(kbytes: u64) -> String {

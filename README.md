@@ -22,9 +22,7 @@
 - MX Linux
 - Gentoo
 - Slackware
-- UwUntu
 - NixOS
-- Vanilla Linux
 - Kali Linux
 - CachyOS
 - FreeBSD

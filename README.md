@@ -6,6 +6,7 @@
 
 ![image](https://github.com/charklie/rsftch/assets/157241212/0d25e434-e4f5-4a44-84bc-b41227a1482e)
 ![image](https://github.com/charklie/rsftch/assets/157241212/77eb06fa-f724-4402-b420-cba4685fa000)
+![image](https://github.com/charklie/rsftch/assets/157241212/beea6921-ebec-401c-b9f0-b651ef676b23)
 
 
 ### Supported distros

@@ -61,11 +61,12 @@ make install
 ```
 
 ### Usage
+```
 Usage: rsftch [OPTION...]
     -h,  --help       Bring up help menu
     -nc, --no-color   Removes all colors and formatting.
     -t,  --tree       Enables tree mode.
-
+```
 
 ### Time comparison
 - Rsftch: 2.94 milliseconds

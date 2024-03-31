@@ -69,7 +69,7 @@ Usage: rsftch [OPTION...]
 ```
 
 ### Time comparison
-- Rsftch: 2.94 milliseconds
+- Rsftch: 16.53 milliseconds
 - Neofetch: 284.03 milliseconds
 - Screeenfetch: 832.59 milliseconds
 - Hyfetch: 1.82 seconds (💀)

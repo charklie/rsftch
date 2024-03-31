@@ -1,16 +1,19 @@
 use colored::Colorize;
 use libmacchina::{traits::MemoryReadout as _, MemoryReadout};
-use std::{env, fs::File, io::Read, process::Command, process::Output};
+use std::{
+    env,
+    fs::{read_to_string, File},
+    io::{BufRead, BufReader, Error, Read},
+    process::{Command, Output},
+};
 
 pub fn help() {
     println!("{}", "Rsftch".bold());
     println!("A lightning fast hardware fetch written in rust,");
     println!("{}", "Written by charklie.".italic());
-    println!("\nUsage: rsftch [OPTION...]\n");
-    println!("  -h,  --help       Bring up this menu");
-    println!("  -o,  --override   Override distribution, changes ASCII. (not implemented yet)");
-    println!("  -nc, --no-color   Removes all colors and formatting.");
-    println!("  -t,  --tree       Enables tree mode.");
+    println!("\nUsage: rsftch [OPTION...] [OVERRIDE]\n");
+    println!("  -h, --help, --usage   Bring up this menu");
+    println!("  -o, --override        Override distribution, changes ASCII.");
 }
 
 pub fn whoami() -> String {
@@ -18,7 +21,69 @@ pub fn whoami() -> String {
     String::from_utf8_lossy(&output.stdout).trim().to_string()
 }
 
-pub fn get_os_release_pretty_name() -> Option<String> {
+pub fn get_cpu_info() -> String {
+    let cpuinfo = read_to_string("/proc/cpuinfo").expect("Failed to read /proc/cpuinfo");
+    let mut cpu_info = String::new();
+    let mut cpu = String::new();
+
+    for line in cpuinfo.lines() {
+        let parts: Vec<&str> = line.split(": ").map(|s| s.trim()).collect();
+        if parts.len() == 2 {
+            match parts[0] {
+                "model name" | "Hardware" | "Processor" | "^cpu model" | "chip type"
+                | "^cpu type" => {
+                    cpu = parts[1].to_string();
+                    break;
+                }
+                _ => {}
+            }
+        }
+    }
+    cpu_info.push_str(&cpu);
+    cpu_info
+}
+
+pub fn get_gpu_info() -> Result<String, Error> {
+    let output = Command::new("lspci").arg("-nnk").output()?;
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let reader = BufReader::new(stdout.as_bytes());
+
+    for line in reader.lines() {
+        let line = line?;
+        if let Some(start_index) = line.find("NVIDIA").or_else(|| line.find("AMD Radeon")) {
+            let (prefix, prefix_len) = if line.contains("NVIDIA") {
+                ("NVIDIA", "NVIDIA".len())
+            } else if line.contains("AMD Radeon") {
+                ("AMD Radeon", "AMD Radeon".len())
+            } else {
+                let vendor_index = line.find("controller").unwrap_or(0);
+                let vendor_str = &line[..vendor_index];
+                (vendor_str, 0)
+            };
+            let start_index = start_index + prefix_len;
+            let start_index = line[start_index..].find("[").ok_or(Error::new(
+                std::io::ErrorKind::NotFound,
+                "GPU name not found",
+            ))? + start_index
+                + 1;
+            let end_index = line[start_index..].find("]").ok_or(Error::new(
+                std::io::ErrorKind::NotFound,
+                "GPU name not found",
+            ))? + start_index;
+            let gpu_name = &line[start_index..end_index];
+            return Ok(format!("{} {}", prefix, gpu_name.trim()));
+        }
+    }
+
+    Err(Error::new(std::io::ErrorKind::NotFound, "GPU not found"))
+}
+
+pub fn get_os_release_pretty_name(overriden_ascii: Option<String>) -> Option<String> {
+    if overriden_ascii != None {
+        return overriden_ascii;
+    }
+
     let output: Output = match Command::new("bash")
         .arg("-c")
         .arg("awk -F'=' '/^ID=/ {print tolower($2)}' /etc/*-release 2> /dev/null")
@@ -88,7 +153,13 @@ pub fn uname_r() -> String {
     String::from_utf8_lossy(&output.stdout).trim().to_string()
 }
 
-pub fn uname_s() -> String {
+pub fn uname_s(overriden_ascii: Option<String>) -> String {
+    if overriden_ascii != None {
+        return match overriden_ascii {
+            Some(str) => str,
+            None => String::new(),
+        };
+    }
     let output = Command::new("uname")
         .arg("-s")
         .output()

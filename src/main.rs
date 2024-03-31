@@ -11,106 +11,79 @@ use mods::r#ascii::*;
 use mods::r#fn::*;
 
 fn main() {
-    let args: Vec<String> = env::args().collect();
-    let mut formatting = true;
-    let mut tree = false;
+    let mut args: Vec<String> = env::args().collect();
+    let mut overriden_ascii: Option<String> = None;
+    for count in 0..args.len() {
+        let arg = &args[count];
 
-    for arg in &args {
         if arg == "-h" || arg == "--help" || arg == "--usage" {
             return help();
-        } else if arg == "-nc" || arg == "--no-color" {
-            formatting = false;
-        } else if arg == "-t" || arg == "--tree" {
-            tree = true;
+        } else if arg == "-o" || arg == "--override" {
+            if count + 1 < args.len() {
+                overriden_ascii = Some(std::mem::replace(&mut args[count + 1], String::new()));
+            } else {
+                println!("Error: Missing argument for override.\n");
+                return help();
+            }
         }
     }
 
-    info(formatting, tree);
+    info(overriden_ascii);
 }
 
-fn info(formatting: bool, tree: bool) {
-    let user = match formatting {
-        false => whoami(),
-        true => whoami().purple().to_string(),
+fn info(overriden_ascii: Option<String>) {
+    let user = whoami();
+    let hostname = uname_n();
+    let distroascii = get_distro_ascii(overriden_ascii);
+    let kernel = uname_r();
+    let desktop = get_wm();
+    let shell = shell_name();
+    let terminal = get_terminal();
+    let memory = get_mem();
+    let os = uname_s(None);
+    let cpu = get_cpu_info();
+
+    let gpu = match get_gpu_info() {
+        Ok(count) => count,
+        Err(err) => {
+            eprintln!("{}", err);
+            "error in cpu".to_string()
+        }
     };
 
-    let hostname = match formatting {
-        false => uname_n(),
-        true => uname_n().purple().to_string(),
+    let uptime = match uptime() {
+        Ok(string_from_uptime) => string_from_uptime,
+        Err(error) => {
+            eprintln!("{}", error);
+            "error in uptime".to_string()
+        }
     };
 
-    let distroascii = match formatting {
-        false => get_distro_ascii(),
-        true => get_distro_ascii().blue().bold().to_string(),
-    };
-
-    let kernel = match formatting {
-        false => uname_r(),
-        true => uname_r().purple().to_string(),
-    };
-
-    let desktop = match formatting {
-        false => get_wm(),
-        true => get_wm().purple().to_string(),
-    };
-
-    let uptime = match formatting {
-        false => match uptime() {
-            Ok(string_from_uptime) => string_from_uptime,
-            Err(error) => {
-                eprintln!("Error from uptime(): {}", error);
-                "".to_string()
-            }
-        },
-        true => match uptime() {
-            Ok(string_from_uptime) => string_from_uptime.purple().to_string(),
-            Err(error) => {
-                eprintln!("Error from uptime(): {}", error);
-                "".to_string()
-            }
-        },
-    };
-
-    let shell = match formatting {
-        false => shell_name(),
-        true => shell_name().purple().to_string(),
-    };
-
-    let terminal = match formatting {
-        false => get_terminal(),
-        true => get_terminal().purple().to_string(),
-    };
-
-    let memory = match formatting {
-        false => get_mem(),
-        true => get_mem().purple().to_string(),
-    };
-
-    let os = match formatting {
-        false => uname_s(),
-        true => uname_s().purple().to_string(),
-    };
-
-    if tree {
-        println!("{}\n", distroascii);
-        println!("  {}          ~  {}", "OS", os);
-        println!("├─󰍹  {}  ~  {}", "hostname", hostname);
-        println!("├─  {}    ~  {}", "kernel", kernel);
-        println!("├─  {}    ~  {}", "memory", memory);
-        println!("╰─󰥔  {}    ~  {}\n", "uptime", uptime);
-        println!("  {}        ~  {}", "user", user);
-        println!("├─  {}  ~  {}", "terminal", terminal);
-        println!("├─  {}     ~  {}", "shell", shell);
-        println!("╰─  {}        ~  {}", "de", desktop);
-    } else if !tree {
-        println!("{}\n", distroascii);
-        println!("  {}      ~  {}@{}", "user", user, hostname);
-        println!("󰣇  {}        ~  {}", "OS", os);
-        println!("  {}    ~  {}", "kernel", kernel);
-        println!("  {}    ~  {}", "memory", memory);
-        println!("󰥔  {}    ~  {}", "uptime", uptime);
-        println!("  {}  ~  {}", "terminal", terminal);
-        println!("  {}     ~  {}", "shell", shell);
-        println!("  {}        ~  {}", "de", desktop);
-    }
+    println!("{}\n", distroascii.blue().bold());
+    println!("{}  os      {}  {}", &"╭─".green(), "~>".green(), os);
+    println!("{}  host    {}  {}", &"├─󱩛".green(), "~>".green(), hostname);
+    println!("{}  shell   {}  {}", &"├─".green(), "~>".green(), shell);
+    println!("{}  kernel  {}  {}\n", &"╰─".green(), "~>".green(), kernel);
+    println!(
+        "{}  user    {}  {}",
+        &"╭─".bright_red(),
+        "~>".bright_red(),
+        user
+    );
+    println!(
+        "{}  term    {}  {}",
+        &"├─".bright_red(),
+        "~>".bright_red(),
+        terminal
+    );
+    println!(
+        "{}  de/wm   {}  {}\n",
+        &"╰─".bright_red(),
+        "~>".bright_red(),
+        desktop
+    );
+    println!("{}  cpu     {}  {}", &"╭─󰍛".purple(), "~>".purple(), cpu);
+    println!("{}  gpu     {}  {}", &"├─󰍹".purple(), "~>".purple(), gpu);
+    println!("{}  memory  {}  {}", &"├─".purple(), "~>".purple(), memory);
+    println!("{}  uptime  {}  {}", &"╰─󰄉".purple(), "~>".purple(), uptime);
 }

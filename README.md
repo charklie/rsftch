@@ -4,10 +4,9 @@
 
 ### Screenshots
 
-![image](https://github.com/charklie/rsftch/assets/157241212/0d25e434-e4f5-4a44-84bc-b41227a1482e)
-![image](https://github.com/charklie/rsftch/assets/157241212/77eb06fa-f724-4402-b420-cba4685fa000)
-![image](https://github.com/charklie/rsftch/assets/157241212/beea6921-ebec-401c-b9f0-b651ef676b23)
-
+![image](https://github.com/charklie/rsftch/assets/157241212/9c465f98-259d-4db9-a07d-b93f3690080f)
+![image](https://github.com/charklie/rsftch/assets/157241212/a745b58f-d42a-4a6e-9c15-2504b8442ed5)
+![image](https://github.com/charklie/rsftch/assets/157241212/f6ff6352-b7da-4e18-a867-7f0c62f62a35)
 
 ### Supported distros
 - Arch Linux
@@ -29,6 +28,9 @@
 - NetBSD
 
 * Other distros wont have a custom title, only "Rust Fetch"
+
+### Dependencies
+- `pciutils`
 
 ### Installation
 #### Cargo

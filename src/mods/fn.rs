@@ -54,7 +54,7 @@ pub fn get_gpu_info() -> Result<String, Error> {
         if let Some(start_index) = line.find("NVIDIA").or_else(|| line.find("AMD Radeon")) {
             let (prefix, prefix_len) = if line.contains("NVIDIA") {
                 ("NVIDIA", "NVIDIA".len())
-            } else if line.contains("AMD Radeon") {
+            } else if line.contains("AMD") {
                 ("AMD Radeon", "AMD Radeon".len())
             } else {
                 let vendor_index = line.find("controller").unwrap_or(0);

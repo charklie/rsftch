@@ -4,7 +4,8 @@ use std::{
     env,
     fs::{read_to_string, File},
     io::{BufRead, BufReader, Error, Read},
-    process::{Command, Output},
+    process::{Command, Output}, 
+    time::Duration,
 };
 
 pub fn help() {
@@ -13,6 +14,8 @@ pub fn help() {
     println!("{}", "Written by charklie.".italic());
     println!("\nUsage: rsftch [OPTION...] [OVERRIDE]\n");
     println!("  -h, --help, --usage   Bring up this menu");
+    println!("  --no-color, --no-formatting");
+    println!("  -nc, -nf              Remove icons, colors and such.");
     println!("  -o, --override        Override distribution, changes ASCII.");
 }
 
@@ -77,6 +80,47 @@ pub fn get_gpu_info() -> Result<String, Error> {
     }
 
     Err(Error::new(std::io::ErrorKind::NotFound, "GPU not found"))
+}
+
+pub fn get_uptime() -> Result<String, Error> {
+    let file = File::open("/proc/uptime").expect("Failed to open /proc/uptime");
+    let mut reader = BufReader::new(file);
+    let mut line = String::new();
+
+    reader
+        .read_line(&mut line)
+        .expect("Failed to read from /proc/uptime");
+
+    let uptime_secs: f64 = line
+        .split_whitespace()
+        .next()
+        .expect("Failed to parse uptime from /proc/uptime")
+        .parse()
+        .expect("Failed to parse uptime as f64");
+
+    Ok(format_duration(Duration::from_secs_f64(uptime_secs)))
+}
+
+fn format_duration(duration: Duration) -> String {
+    let seconds = duration.as_secs();
+    let days = seconds / (24 * 3600);
+    let hours = (seconds / 3600) % 24;
+    let minutes = (seconds / 60) % 60;
+    let seconds = seconds % 60;
+
+    let mut uptime_string = String::new();
+    if days > 0 {
+        uptime_string.push_str(&format!("{} days, ", days));
+    }
+    if hours > 0 || days > 0 {
+        uptime_string.push_str(&format!("{} hours, ", hours));
+    }
+    if minutes > 0 || hours > 0 || days > 0 {
+        uptime_string.push_str(&format!("{} minutes, ", minutes));
+    }
+    uptime_string.push_str(&format!("{} seconds", seconds));
+
+    uptime_string.trim_end_matches(", ").to_string()
 }
 
 pub fn get_os_release_pretty_name(overriden_ascii: Option<String>) -> Option<String> {

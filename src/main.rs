@@ -1,5 +1,4 @@
 use colored::Colorize;
-use nixinfo::uptime;
 use std::env;
 
 mod mods {
@@ -7,83 +6,169 @@ mod mods {
     pub mod r#fn;
 }
 
-use mods::r#ascii::*;
-use mods::r#fn::*;
+use crate::mods::r#ascii::*;
+use crate::mods::r#fn::*;
 
 fn main() {
     let mut args: Vec<String> = env::args().collect();
     let mut overriden_ascii: Option<String> = None;
+    let mut formatting = true;
     for count in 0..args.len() {
         let arg = &args[count];
 
-        if arg == "-h" || arg == "--help" || arg == "--usage" {
-            return help();
-        } else if arg == "-o" || arg == "--override" {
-            if count + 1 < args.len() {
-                overriden_ascii = Some(std::mem::replace(&mut args[count + 1], String::new()));
-            } else {
-                println!("Error: Missing argument for override.\n");
-                return help();
+        match arg.as_str() {
+            "-h" | "--help" | "--usage" => return help(),
+            "-nf" | "-nc" | "--no-formatting" | "--no-color" => formatting = false,
+            "-o" | "--override" => {
+                if count + 1 < args.len() {
+                    overriden_ascii = Some(std::mem::replace(&mut args[count + 1], String::new()));
+                } else {
+                    println!("{} Missing argument for override.\n", "[ERROR]".red());
+                    return help();
+                }
             }
-        }
+            _ => {
+                continue;
+            }
+        };
     }
 
-    info(overriden_ascii);
+    info(formatting, overriden_ascii);
 }
 
-fn info(overriden_ascii: Option<String>) {
-    let user = whoami();
-    let hostname = uname_n();
-    let distroascii = get_distro_ascii(overriden_ascii);
-    let kernel = uname_r();
-    let desktop = get_wm();
-    let shell = shell_name();
-    let terminal = get_terminal();
-    let memory = get_mem();
-    let os = uname_s(None);
-    let cpu = get_cpu_info();
-
-    let gpu = match get_gpu_info() {
-        Ok(count) => count,
-        Err(err) => {
-            eprintln!("{}", err);
-            "error in cpu".to_string()
-        }
+fn info(formatting: bool, overriden_ascii: Option<String>) {
+    let distroascii = match formatting {
+        false => format!("{}\n", get_distro_ascii(overriden_ascii)),
+        true => format!("{}\n", get_distro_ascii(overriden_ascii).blue().bold()),
     };
 
-    let uptime = match uptime() {
-        Ok(string_from_uptime) => string_from_uptime,
-        Err(error) => {
-            eprintln!("{}", error);
-            "error in uptime".to_string()
-        }
+    let os = match formatting {
+        false => format!("{}  os      {}  {}", &"╭─", "~>", uname_s(None)),
+        true => format!(
+            "{}  os      {}  {}",
+            &"╭─".green(),
+            "~>".green(),
+            uname_s(None)
+        ),
     };
 
-    println!("{}\n", distroascii.blue().bold());
-    println!("{}  os      {}  {}", &"╭─".green(), "~>".green(), os);
-    println!("{}  host    {}  {}", &"├─󱩛".green(), "~>".green(), hostname);
-    println!("{}  shell   {}  {}", &"├─".green(), "~>".green(), shell);
-    println!("{}  kernel  {}  {}\n", &"╰─".green(), "~>".green(), kernel);
+    let hostname = match formatting {
+        false => format!("{}  host    {}  {}", &"├─", "~>", uname_n()),
+        true => format!(
+            "{}  host    {}  {}",
+            &"├─󱩛".green(),
+            "~>".green(),
+            uname_n()
+        ),
+    };
+
+    let shell = match formatting {
+        false => format!("{}  shell   {}  {}", &"├─", "~>", shell_name()),
+        true => format!(
+            "{}  shell   {}  {}",
+            &"├─".green(),
+            "~>".green(),
+            shell_name()
+        ),
+    };
+
+    let kernel = match formatting {
+        false => format!("{}  kernel  {}  {}\n", &"╰─", "~>", uname_r()),
+        true => format!(
+            "{}  kernel  {}  {}\n",
+            &"╰─".green(),
+            "~>".green(),
+            uname_r()
+        ),
+    };
+
+    let user = match formatting {
+        false => format!("{}  user    {}  {}", &"╭─", "~>", whoami()),
+        true => format!(
+            "{}  user    {}  {}",
+            &"╭─".bright_red(),
+            "~>".bright_red(),
+            whoami()
+        ),
+    };
+
+    let term = match formatting {
+        false => format!("{}  term    {}  {}", &"├─", "~>", get_terminal()),
+        true => format!(
+            "{}  term    {}  {}",
+            &"├─".bright_red(),
+            "~>".bright_red(),
+            get_terminal()
+        ),
+    };
+
+    let de = match formatting {
+        false => format!("{}  de/wm   {}  {}\n", &"╰─", "~>", get_wm()),
+        true => format!(
+            "{}  de/wm   {}  {}\n",
+            &"╰─".bright_red(),
+            "~>".bright_red(),
+            get_wm()
+        ),
+    };
+
+    let cpu = match formatting {
+        false => format!("{}  cpu     {}  {}", &"╭─", "~>", get_cpu_info()),
+        true => format!(
+            "{}  cpu     {}  {}",
+            &"╭─󰍛".purple(),
+            "~>".purple(),
+            get_cpu_info()
+        ),
+    };
+
+    let mem = match formatting {
+        false => format!("{}  memory  {}  {}", &"├─", "~>", get_mem()),
+        true => format!(
+            "{}  memory  {}  {}",
+            &"├─".purple(),
+            "~>".purple(),
+            get_mem()
+        ),
+    };
+
+    let uptime = match formatting {
+        false => match get_uptime() {
+            Err(_err) => "".to_string(),
+            Ok(time) => format!("{}  uptime  {}  {:?}", &"╰─", "~>", time)
+                .trim()
+                .replace("\"", ""),
+        },
+        true => match get_uptime() {
+            Err(_err) => "".to_string(),
+            Ok(time) => format!("{}  uptime  {}  {:?}", &"╰─󰄉".purple(), "~>".purple(), time)
+                .trim()
+                .replace("\"", ""),
+        },
+    };
+
+    let gpu = match formatting {
+        false => match get_gpu_info() {
+            Err(_err) => "".to_string(),
+            Ok(gpu_info) => format!("{}  gpu     {}  {:?}", &"├─", "~>", gpu_info)
+                .trim()
+                .replace("\"", ""),
+        },
+        true => match get_gpu_info() {
+            Err(_err) => "".to_string(),
+            Ok(gpu_info) => format!(
+                "{}  gpu     {}  {:?}",
+                &"├─󰍹".purple(),
+                "~>".purple(),
+                gpu_info
+            )
+            .trim()
+            .replace("\"", ""),
+        },
+    };
+
     println!(
-        "{}  user    {}  {}",
-        &"╭─".bright_red(),
-        "~>".bright_red(),
-        user
+        "{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}",
+        distroascii, os, hostname, shell, kernel, user, term, de, cpu, gpu, mem, uptime
     );
-    println!(
-        "{}  term    {}  {}",
-        &"├─".bright_red(),
-        "~>".bright_red(),
-        terminal
-    );
-    println!(
-        "{}  de/wm   {}  {}\n",
-        &"╰─".bright_red(),
-        "~>".bright_red(),
-        desktop
-    );
-    println!("{}  cpu     {}  {}", &"╭─󰍛".purple(), "~>".purple(), cpu);
-    println!("{}  gpu     {}  {}", &"├─󰍹".purple(), "~>".purple(), gpu);
-    println!("{}  memory  {}  {}", &"├─".purple(), "~>".purple(), memory);
-    println!("{}  uptime  {}  {}", &"╰─󰄉".purple(), "~>".purple(), uptime);
 }

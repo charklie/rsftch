@@ -65,11 +65,16 @@ make install
 Usage: rsftch [OPTION...] [OVERRIDE]
 
   -h, --help, --usage   Bring up this menu
+<<<<<<< HEAD
+=======
+  --no-color, --no-formatting
+  -nc, -nf              Remove icons, colors and such.
+>>>>>>> f5f69f6 (re-add -nc option, change some if statements to match for some added speed, revamped variable declaration and make uptime more prettier, release 0.3.6)
   -o, --override        Override distribution, changes ASCII.
 ```
 
 ### Time comparison
-- Rsftch: 16.53 milliseconds
+- Rsftch: 19.72 milliseconds
 - Neofetch: 284.03 milliseconds
 - Screeenfetch: 832.59 milliseconds
 - Hyfetch: 1.82 seconds (💀)
@@ -79,5 +84,4 @@ Currently Rsftch only works on GNU/Linux, (most) BSD distributions and (probably
 
 #### Todo
 - [ ] Add more distros
-- [ ] Windows Support
-- [x] Split up `main.rs` into multiple files.
+- [ ] Rewrite memory function to rid of libmacchina dep.

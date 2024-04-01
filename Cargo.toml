@@ -1,6 +1,6 @@
 [package]
 name = "rsftch"
-version = "0.3.5"
+version = "0.3.6"
 edition = "2021"
 authors = ["Charklie charliejohanid@gmail.com"]
 license = "MIT"
@@ -13,4 +13,3 @@ categories = ["command-line-utilities"]
 [dependencies]
 colored = "2.1.0"
 libmacchina = "7.2.2"
-nixinfo = "0.3.3"

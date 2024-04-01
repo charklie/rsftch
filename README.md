@@ -62,10 +62,10 @@ make install
 
 ### Usage
 ```
-Usage: rsftch [OPTION...]
-    -h,  --help       Bring up help menu
-    -nc, --no-color   Removes all colors and formatting.
-    -t,  --tree       Enables tree mode.
+Usage: rsftch [OPTION...] [OVERRIDE]
+
+  -h, --help, --usage   Bring up this menu
+  -o, --override        Override distribution, changes ASCII.
 ```
 
 ### Time comparison

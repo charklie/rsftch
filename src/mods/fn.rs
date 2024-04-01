@@ -51,7 +51,7 @@ pub fn get_gpu_info() -> Result<String, Error> {
 
     for line in reader.lines() {
         let line = line?;
-        if let Some(start_index) = line.find("NVIDIA").or_else(|| line.find("AMD Radeon")) {
+        if let Some(start_index) = line.find("NVIDIA").or_else(|| line.find("AMD")) {
             let (prefix, prefix_len) = if line.contains("NVIDIA") {
                 ("NVIDIA", "NVIDIA".len())
             } else if line.contains("AMD") {

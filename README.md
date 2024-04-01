@@ -65,11 +65,8 @@ make install
 Usage: rsftch [OPTION...] [OVERRIDE]
 
   -h, --help, --usage   Bring up this menu
-<<<<<<< HEAD
-=======
   --no-color, --no-formatting
   -nc, -nf              Remove icons, colors and such.
->>>>>>> f5f69f6 (re-add -nc option, change some if statements to match for some added speed, revamped variable declaration and make uptime more prettier, release 0.3.6)
   -o, --override        Override distribution, changes ASCII.
 ```
 

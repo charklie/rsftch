@@ -112,10 +112,10 @@ fn format_duration(duration: Duration) -> String {
     if days > 0 {
         uptime_string.push_str(&format!("{} days, ", days));
     }
-    if hours > 0 || days > 0 {
+    if hours > 0 {
         uptime_string.push_str(&format!("{} hours, ", hours));
     }
-    if minutes > 0 || hours > 0 || days > 0 {
+    if minutes > 0 {
         uptime_string.push_str(&format!("{} minutes, ", minutes));
     }
     uptime_string.push_str(&format!("{} seconds", seconds));

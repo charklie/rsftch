@@ -36,10 +36,23 @@
 #### Cargo
 `cargo install rsftch`
 
+### AUR (Helper)
+With your favourite AUR helper:
+`aura -A rsftch-git`
+`yay -S rsftch-git`
+`paru -S rsftch-git`
+
+### AUR (Source)
+```
+sudo pacman -S --needed base-devel
+git clone https://aur.archlinux.org/rsftch-git.git
+cd rsftch-git
+makepkg -si
+```
 #### Source
 ```
-git clone https://github.com/charklie/rsftch.git ~/rsftch/`
-cd ~/rsftch/
+git clone https://github.com/charklie/rsftch.git`
+cd rsftch
 cargo install --path .
 ```
 

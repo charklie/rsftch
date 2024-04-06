@@ -12,6 +12,7 @@ use crate::mods::r#fn::*;
 fn main() {
     let mut args: Vec<String> = env::args().collect();
     let mut overriden_ascii: Option<String> = None;
+    let mut margin: i8 = 1;
     let mut formatting = true;
     for count in 0..args.len() {
         let arg = &args[count];
@@ -19,6 +20,14 @@ fn main() {
         match arg.as_str() {
             "-h" | "--help" | "--usage" => return help(),
             "-nf" | "-nc" | "--no-formatting" | "--no-color" => formatting = false,
+            "-m" | "--margin" => {
+                if count + 1 < args.len() {
+                    margin = args[count + 1].parse().unwrap();
+                } else {
+                    println!("{} Missing argument for margin.\n", "[ERROR]".red());
+                    return help();
+                }
+            }
             "-o" | "--override" => {
                 if count + 1 < args.len() {
                     overriden_ascii = Some(std::mem::replace(&mut args[count + 1], String::new()));
@@ -33,10 +42,10 @@ fn main() {
         };
     }
 
-    info(formatting, overriden_ascii);
+    info(formatting, overriden_ascii, margin);
 }
 
-fn info(formatting: bool, overriden_ascii: Option<String>) {
+fn info(formatting: bool, overriden_ascii: Option<String>, margin: i8) {
     let distroascii = match formatting {
         false => format!("{}\n", get_distro_ascii(overriden_ascii)),
         true => format!("{}\n", get_distro_ascii(overriden_ascii).blue().bold()),
@@ -167,8 +176,13 @@ fn info(formatting: bool, overriden_ascii: Option<String>) {
         },
     };
 
-    println!(
-        "{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}",
-        distroascii, os, hostname, shell, kernel, user, term, de, cpu, gpu, mem, uptime
-    );
+    let margin_spaces = " ".repeat(margin as usize);
+    let infos = vec![os, hostname, shell, kernel, user, term, de, cpu, gpu, mem, uptime];
+
+    println!("{}", distroascii);
+    for item in infos {
+        if !item.is_empty() {
+            println!("{}{}", margin_spaces, item);
+        }
+    }
 }

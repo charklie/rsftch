@@ -17,6 +17,7 @@ pub fn help() {
     println!("  --no-color, --no-formatting");
     println!("  -nc, -nf              Remove icons, colors and such.");
     println!("  -o, --override        Override distribution, changes ASCII.");
+    println!("  -m, --margin          Add margin to the info sections, default 1.")
 }
 
 pub fn whoami() -> String {

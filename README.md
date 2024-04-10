@@ -33,7 +33,7 @@
 - `pciutils`
 
 ### Installation
-#### Cargo
+#### Cargo _(recommended)_
 `cargo install rsftch`
 
 #### AUR
@@ -42,25 +42,19 @@ With your favourite AUR helper:
 `yay -S rsftch-git`
 `paru -S rsftch-git`
 
-Or from source:
+Or from AUR source:
 ```
 sudo pacman -S --needed base-devel
 git clone https://aur.archlinux.org/rsftch-git.git
 cd rsftch-git
 makepkg -si
 ```
-#### Source
+#### Git Source
 ```
 git clone https://github.com/charklie/rsftch.git`
 cd rsftch
 cargo install --path .
 ```
-
-Add this to your .bashrc / .zshrc if you already dont:
-`export PATH="/home/$USER/.cargo/bin:$PATH"`
-  
-If you're using fish, run this command if you already haven't:
-`set -U fish_user_paths ~/.cargo/bin/ $fish_user_paths`
 
 #### NetBSD
 If you're on NetBSD or, any supported pkgsrc platform, a pre-compiled binary is available from the official repositories.
@@ -72,16 +66,23 @@ Or, if you prefer to build it from source:
 cd /usr/pkgsrc/sysutils/rsftch
 make install
 ```
+### Common issues
+##### Running `rsftch` in terminal does't work
+Add this to your .bashrc / .zshrc if you already dont:
+`export PATH="/home/$USER/.cargo/bin:$PATH"`
+  
+If you're using fish, run this command if you already haven't:
+`set -U fish_user_paths ~/.cargo/bin/ $fish_user_paths`
 
 ### Usage
 ```
-Usage: rsftch [OPTION...] [OVERRIDE]
+Usage: rsftch [OPTION...] [OVERRIDE] [MARGIN]
 
   -h, --help, --usage   Bring up this menu
   --no-color, --no-formatting
   -nc, -nf              Remove icons, colors and such.
   -o, --override        Override distribution, changes ASCII.
-```
+  -m, --margin          Add margin to the info sections, default 1.```
 
 ### Time comparison
 - Rsftch: 19.72 milliseconds
@@ -94,4 +95,6 @@ Currently Rsftch only works on GNU/Linux, (most) BSD distributions and (probably
 
 #### Todo
 - [ ] Add more distros
+- [ ] Add more info (resolution)
 - [ ] Rewrite memory function to rid of libmacchina dep.
+- [ ] Add -c1, -c2, -c3 options to change colors of sections

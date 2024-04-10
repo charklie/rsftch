@@ -1,4 +1,3 @@
-use colored::Colorize;
 use libmacchina::{traits::MemoryReadout as _, MemoryReadout};
 use std::{
     env,
@@ -9,10 +8,7 @@ use std::{
 };
 
 pub fn help() {
-    println!("{}", "Rsftch".bold());
-    println!("A lightning fast hardware fetch written in rust,");
-    println!("{}", "Written by charklie.".italic());
-    println!("\nUsage: rsftch [OPTION...] [OVERRIDE]\n");
+    println!("Usage: rsftch [OPTION...] [OVERRIDE] [MARGIN]\n");
     println!("  -h, --help, --usage   Bring up this menu");
     println!("  --no-color, --no-formatting");
     println!("  -nc, -nf              Remove icons, colors and such.");

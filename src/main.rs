@@ -1,13 +1,11 @@
 use colored::Colorize;
 use std::env;
 
-mod mods {
-    pub mod r#ascii;
-    pub mod r#fn;
-}
+pub mod ascii;
+pub mod fns;
 
-use crate::mods::r#ascii::*;
-use crate::mods::r#fn::*;
+use crate::ascii::*;
+use crate::fns::*;
 
 fn main() {
     let mut args: Vec<String> = env::args().collect();

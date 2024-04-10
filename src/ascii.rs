@@ -1,4 +1,4 @@
-use crate::mods::r#fn::{get_os_release_pretty_name, uname_s};
+use crate::fns::{get_os_release_pretty_name, uname_s};
 
 pub fn get_distro_ascii(overriden_ascii: Option<String>) -> String {
     if get_os_release_pretty_name(overriden_ascii.clone())

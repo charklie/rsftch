@@ -83,7 +83,7 @@ Usage: rsftch [OPTION...] [OVERRIDE] [MARGIN]
   -nc, -nf              Remove icons, colors and such.
   -o, --override        Override distribution, changes ASCII.
   -m, --margin          Add margin to the info sections, default 1.```
-
+```
 ### Time comparison
 - Rsftch: 19.72 milliseconds
 - Neofetch: 284.03 milliseconds

@@ -85,7 +85,7 @@ Usage: rsftch [OPTION...] [OVERRIDE] [MARGIN]
   -m, --margin          Add margin to the info sections, default 1.```
 ```
 ### Time comparison
-- Rsftch: 19.72 milliseconds
+- Rsftch: 35.21 milliseconds
 - Neofetch: 284.03 milliseconds
 - Screeenfetch: 832.59 milliseconds
 - Hyfetch: 1.82 seconds (💀)
@@ -96,5 +96,8 @@ Currently Rsftch only works on GNU/Linux, (most) BSD distributions and (probably
 #### Todo
 - [ ] Add more distros
 - [ ] Add more info (resolution)
+- [X] Add more info (packages)
 - [ ] Rewrite memory function to rid of libmacchina dep.
 - [ ] Add -c1, -c2, -c3 options to change colors of sections
+- [ ] Change to clap for arguments (if it doesnt ruin exec speed)
+- [ ] Optimize packages function

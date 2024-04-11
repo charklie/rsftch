@@ -109,6 +109,14 @@ fn info(formatting: bool, overriden_ascii: Option<String>, margin: i8) {
         value: uname_r(),
         color: Color::Green,
     };
+
+    let packs = InfoItem {
+        title: "packs",
+        alignment_space: 3,
+        icon: "",
+        value: get_packages(),
+        color: Color::Green,
+    };
     
     let user = InfoItem {
         title: "user",
@@ -173,7 +181,7 @@ fn info(formatting: bool, overriden_ascii: Option<String>, margin: i8) {
     };
 
     let margin_spaces = " ".repeat(margin as usize);
-    let infos1 = vec![os, hostname, shell, kernel];
+    let infos1 = vec![os, hostname, shell, kernel, packs];
     let infos2 = vec![user, term, de];
     let infos3 = vec![cpu, gpu, mem, uptime];
     let mut info_sets = vec![infos1, infos2, infos3];

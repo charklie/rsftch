@@ -138,8 +138,8 @@ pub fn get_packages() -> String {
                 }
             }
             "apt" => { // apt list --installed
-                if let Ok(output) = Command::new(i)
-                    .args(["list", "--installed"])
+                if let Ok(output) = Command::new("apt-cache")
+                    .args(["pkgnames"])
                     .stdout(Stdio::piped())
                     .spawn()
                     .and_then(|child| Command::new("wc")

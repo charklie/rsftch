@@ -91,7 +91,7 @@ Usage: rsftch [OPTION...] [OVERRIDE] [MARGIN]
 - Hyfetch: 1.82 seconds (💀)
 
 ### Compatability
-Currently Rsftch only works on GNU/Linux, (most) BSD distributions and (probably) Mac OS, although windows support is planned.  
+Currently Rsftch only works on GNU/Linux, (most) BSD distributions and (probably) Mac OS.
 
 #### Todo
 - [ ] Add more distros

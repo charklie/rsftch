@@ -31,6 +31,7 @@
 
 ### Dependencies
 - `pciutils`
+- Any nerdfont
 
 ### Installation
 #### Cargo _(recommended)_

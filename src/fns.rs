@@ -44,20 +44,22 @@ pub fn get_cpu_info() -> String {
 }
 
 fn get_package_managers() -> Vec<&'static str> {
-    let possible_managers = vec!["xbps-query", "dnf", "dkpg-query", "rpm", "apt", "pacman", "emerge", "yum", "zypper", "apk", "pkgin", "pkg"];
+    let possible_managers = vec!["xbps-query", "dnf", "dkpg-query", "rpm", "apt", "pacman", "emerge", "yum", "zypper", "apk", "pkg_info", "pkg"];
     let mut installed_managers: Vec<&'static str> = Vec::new();
     for manager in possible_managers {
-        match Command::new(manager).arg("--version").output() {
-            Ok(ref result) => {
-                if result.status.success() {
-                    installed_managers.push(manager);
-                }
+        let version_command = match manager {
+            "pkg_info" => "-V",
+            _ => "--version",
+        };
+        
+        if let Ok(result) = Command::new(manager).arg(version_command).output() {
+            if result.status.success() {
+                installed_managers.push(manager);
             }
-            Err(ref _err) => {}
         }
     }
 
-    return installed_managers;
+    installed_managers
 }
 
 pub fn get_packages() -> String {
@@ -245,9 +247,9 @@ pub fn get_packages() -> String {
                     });
                 }
             }
-            "pkgin" => { // pkgin list
-                if let Ok(output) = Command::new(i)
-                    .args(["list"])
+            "pkg_info" => { // ls /usr/pkg/pkgdb/
+                if let Ok(output) = Command::new("ls")
+                    .args(["/usr/pkg/pkgdb/"])
                     .stdout(Stdio::piped())
                     .spawn()
                     .and_then(|child| Command::new("wc")

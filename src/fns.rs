@@ -44,7 +44,7 @@ pub fn get_cpu_info() -> String {
 }
 
 fn get_package_managers() -> Vec<&'static str> {
-    let possible_managers = vec!["xbps-query", "dnf", "dkpg-query", "rpm", "apt", "pacman", "emerge", "yum", "zypper", "apk", "pkg_info", "pkg"];
+    let possible_managers = vec!["xbps-query", "dnf", "dkpg-query", "rpm", "apt", "pacman", "emerge", "yum", "zypper", "apk", "pkgin", "pkg"];
     let mut installed_managers: Vec<&'static str> = Vec::new();
     for manager in possible_managers {
         match Command::new(manager).arg("--version").output() {
@@ -245,8 +245,9 @@ pub fn get_packages() -> String {
                     });
                 }
             }
-            "pkg_info" => { // dnf list installed
+            "pkgin" => { // pkgin list
                 if let Ok(output) = Command::new(i)
+                    .args(["list"])
                     .stdout(Stdio::piped())
                     .spawn()
                     .and_then(|child| Command::new("wc")
@@ -262,7 +263,7 @@ pub fn get_packages() -> String {
                     });
                 }
             }
-            "pkg" => { // dnf list installed
+            "pkg" => { // pkg info
                 if let Ok(output) = Command::new("pkg")
                     .args(["info"])
                     .stdout(Stdio::piped())

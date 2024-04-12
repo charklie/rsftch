@@ -113,7 +113,7 @@ fn info(formatting: bool, overriden_ascii: Option<String>, margin: i8) {
     let packs = InfoItem {
         title: "packs",
         alignment_space: 3,
-        icon: "",
+        icon: "󰿺",
         value: get_packages(),
         color: Color::Green,
     };

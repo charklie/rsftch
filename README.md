@@ -69,12 +69,25 @@ make install
 ```
 ### Common issues
 ##### Running `rsftch` in terminal doesn't work (command not found)
-Add this to your .bashrc / .zshrc if you already dont:
-`export PATH="/home/$USER/.cargo/bin:$PATH"`
-  
-If you're using fish, run this command if you already haven't:
+Solution: (If you installed with cargo) Add ~/.cargo/bin/ to PATH, how varies from shell to shell, here are some popular ones:
+
+Bash:
+`export PATH="/home/$USER/.cargo/bin:$PATH" >> (.bashrc path)`
+
+Zsh:
+`export PATH="/home/$USER/.cargo/bin:$PATH" >> (.zshrc path)`
+
+Fish:
 `set -U fish_user_paths ~/.cargo/bin/ $fish_user_paths`
 
+Nushell:
+let-env PATH = ($env.PATH | prepend $"($env.HOME)/.cargo/bin")`
+
+Elvish:
+`set paths = [~/.cargo/bin/ $@paths`
+
+If none of these work, or you are unsure how to do this in your shell, consider moving the binary to /usr/bin, example command:
+`sudo mv ~/.cargo/bin/rsftch /usr/bin`
 ### Usage
 ```
 Usage: rsftch [OPTION...] [OVERRIDE] [MARGIN]

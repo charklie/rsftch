@@ -94,11 +94,13 @@ Usage: rsftch [OPTION...] [OVERRIDE] [MARGIN]
 ### Compatability
 Currently Rsftch only works on GNU/Linux, (most) BSD distributions and (probably) Mac OS.
 
+### Note
+(If) You're wondering why I didn't use clap for command-line argument parsing, I've personally found it slow, and if I do get it to be somewhat fast, its too easy and first rsftch was meant to be a project for me to learn rust so I tried to complicate (some) things and making them in pure rust instead of using a crate to do it for me.
+
 #### Todo
 - [ ] Add more distros
 - [ ] Add more info (resolution)
 - [X] Add more info (packages)
 - [ ] Rewrite memory function to rid of libmacchina dep.
 - [ ] Add -c1, -c2, -c3 options to change colors of sections
-- [ ] Change to clap for arguments (if it doesnt ruin exec speed)
 - [ ] Optimize packages function

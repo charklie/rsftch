@@ -68,7 +68,7 @@ cd /usr/pkgsrc/sysutils/rsftch
 make install
 ```
 ### Common issues
-##### Running `rsftch` in terminal does't work
+##### Running `rsftch` in terminal doesn't work (command not found)
 Add this to your .bashrc / .zshrc if you already dont:
 `export PATH="/home/$USER/.cargo/bin:$PATH"`
   

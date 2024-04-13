@@ -78,7 +78,7 @@ Fish:
 `set -U fish_user_paths ~/.cargo/bin/ $fish_user_paths`
 
 Nushell:
-let-env PATH = ($env.PATH | prepend $"($env.HOME)/.cargo/bin")`
+`let-env PATH = ($env.PATH | prepend $"($env.HOME)/.cargo/bin")`
 
 Elvish:
 `set paths = [~/.cargo/bin/ $@paths`

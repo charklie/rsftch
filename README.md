@@ -93,7 +93,7 @@ Usage: rsftch [OPTION...] [OVERRIDE] [MARGIN]
   --no-color, --no-formatting
   -nc, -nf              Remove icons, colors and such.
   -o, --override        Override distribution, changes ASCII.
-  -m, --margin          Add margin to the info sections, default 1.```
+  -m, --margin          Add margin to the info sections, default 1.
 ```
 ### Time comparison
 - Rsftch: 35.21 milliseconds

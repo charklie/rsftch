@@ -72,7 +72,7 @@ make install
 Solution: (If you installed with cargo) Add ~/.cargo/bin/ to PATH, how varies from shell to shell, here are some popular ones:
 
 Bash / Zsh:
-`echo export PATH="/home/$USER/.cargo/bin:$PATH" >> (.bashrc / .zshrc path)`
+`echo "PATH=\$PATH:~/.cargo/bin/" >> (.bashrc / .zshrc path)`
 
 Fish:
 `set -U fish_user_paths ~/.cargo/bin/ $fish_user_paths`

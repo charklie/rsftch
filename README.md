@@ -81,7 +81,7 @@ Nushell:
 `let-env PATH = ($env.PATH | prepend $"($env.HOME)/.cargo/bin")`
 
 Elvish:
-`set paths = [~/.cargo/bin/ $@paths`
+`set paths = [~/.cargo/bin/ $@paths`]
 
 If none of these work, or you are unsure how to do this in your shell, consider moving the binary to /usr/bin, example command:
 `sudo mv ~/.cargo/bin/rsftch /usr/bin`

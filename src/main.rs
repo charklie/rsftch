@@ -3,6 +3,7 @@ use std::env;
 
 pub mod ascii;
 pub mod fns;
+pub mod fonts;
 
 use crate::ascii::*;
 use crate::fns::*;
@@ -28,7 +29,7 @@ fn main() {
             }
             "-o" | "--override" => {
                 if count + 1 < args.len() {
-                    overriden_ascii = Some(std::mem::replace(&mut args[count + 1], String::new()));
+                    overriden_ascii = Some(std::mem::take(&mut args[count + 1]));
                 } else {
                     println!("{} Missing argument for override.\n", "[ERROR]".red());
                 }
@@ -59,17 +60,33 @@ enum Color {
 }
 
 fn print_data(infos: &InfoItem, connector: &'static str) -> String {
-  let arrow = "~>";
-  let coloreds = match infos.color {
-    Color::Green => (connector.green().to_string(), infos.icon.green().to_string(), arrow.green().to_string()),
-    Color::Red => (connector.bright_red().to_string(), infos.icon.bright_red().to_string(), arrow.bright_red().to_string()),
-    Color::Purple => (connector.purple().to_string(), infos.icon.purple().to_string(), arrow.purple().to_string()),
-    Color::NoColor => (connector.to_string(), "".to_string(), arrow.to_string()),
-  };
+    let arrow = "~>";
+    let coloreds = match infos.color {
+        Color::Green => (
+            connector.green().to_string(),
+            infos.icon.green().to_string(),
+            arrow.green().to_string(),
+        ),
+        Color::Red => (
+            connector.bright_red().to_string(),
+            infos.icon.bright_red().to_string(),
+            arrow.bright_red().to_string(),
+        ),
+        Color::Purple => (
+            connector.purple().to_string(),
+            infos.icon.purple().to_string(),
+            arrow.purple().to_string(),
+        ),
+        Color::NoColor => (connector.to_string(), "".to_string(), arrow.to_string()),
+    };
 
-  let alignment_space = " ".repeat(infos.alignment_space as usize);
+    let alignment_space = " ".repeat(infos.alignment_space as usize);
 
-  format!("{}{}  {}{}{}  {}", coloreds.0, coloreds.1, infos.title, alignment_space, coloreds.2, infos.value).to_string()
+    format!(
+        "{}{}  {}{}{}  {}",
+        coloreds.0, coloreds.1, infos.title, alignment_space, coloreds.2, infos.value
+    )
+    .to_string()
 }
 
 fn info(formatting: bool, overriden_ascii: Option<String>, margin: i8) {
@@ -117,7 +134,7 @@ fn info(formatting: bool, overriden_ascii: Option<String>, margin: i8) {
         value: get_packages(),
         color: Color::Green,
     };
-    
+
     let user = InfoItem {
         title: "user",
         alignment_space: 4,
@@ -141,7 +158,7 @@ fn info(formatting: bool, overriden_ascii: Option<String>, margin: i8) {
         value: get_wm(),
         color: Color::Red,
     };
-    
+
     let cpu = InfoItem {
         title: "cpu",
         alignment_space: 5,
@@ -168,7 +185,7 @@ fn info(formatting: bool, overriden_ascii: Option<String>, margin: i8) {
         },
         color: Color::Purple,
     };
-    
+
     let gpu = InfoItem {
         title: "gpu",
         alignment_space: 5,
@@ -184,19 +201,19 @@ fn info(formatting: bool, overriden_ascii: Option<String>, margin: i8) {
     let infos1 = vec![os, hostname, shell, kernel, packs];
     let infos2 = vec![user, term, de];
     let infos3 = vec![cpu, gpu, mem, uptime];
-    let mut info_sets = vec![infos1, infos2, infos3];
+    let mut info_sets = [infos1, infos2, infos3];
 
     println!("{}", distroascii);
 
     for (idx, infos) in info_sets.iter_mut().enumerate() {
         if idx > 0 {
-            println!("");
+            println!();
         }
         loop_over_data(infos, margin_spaces.clone(), formatting)
     }
 }
 
-fn loop_over_data(list: &mut Vec<InfoItem>, margin: String, formatting: bool) {
+fn loop_over_data(list: &mut [InfoItem], margin: String, formatting: bool) {
     let last = list.len();
     for (idx, item) in list.iter_mut().enumerate() {
         if !item.value.is_empty() {
@@ -213,7 +230,7 @@ fn loop_over_data(list: &mut Vec<InfoItem>, margin: String, formatting: bool) {
             } else {
                 connector = "├─";
             }
-            
+
             println!("{}{}", margin, print_data(item, connector));
         }
     }

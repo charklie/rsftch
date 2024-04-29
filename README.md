@@ -24,6 +24,7 @@
 - NixOS
 - Kali Linux
 - CachyOS
+- Funtoo Linux
 - FreeBSD
 - NetBSD
 

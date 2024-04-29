@@ -1,4 +1,7 @@
+use figlet_rs::FIGfont;
+
 use crate::fns::{get_os_release_pretty_name, uname_s};
+use crate::fonts::SMSLANT;
 
 pub fn get_distro_ascii(overriden_ascii: Option<String>) -> String {
     if get_os_release_pretty_name(overriden_ascii.clone())
@@ -104,6 +107,14 @@ pub fn get_distro_ascii(overriden_ascii: Option<String>) -> String {
         .contains("cachy")
     {
         return "  _____         __       \n / ___/__ _____/ /  __ __\n/ /__/ _ `/ __/ _ \\/ // /\n\\___/\\_,_/\\__/_//_/\\_, / \n                  /___/".to_string();
+    } else if get_os_release_pretty_name(overriden_ascii.clone())
+        .unwrap_or("".to_string())
+        .to_ascii_lowercase()
+        .contains("funtoo")
+    {
+        let smslant_font = FIGfont::from_content(SMSLANT).unwrap();
+        let ascii = smslant_font.convert("Funtoo");
+        return ascii.unwrap().to_string().trim_end().to_string();
     }
     if uname_s(overriden_ascii.clone())
         .to_ascii_lowercase()

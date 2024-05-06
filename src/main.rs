@@ -1,23 +1,30 @@
 use colored::Colorize;
 use std::env;
 
-pub mod ascii;
-pub mod fns;
+mod ascii;
+mod color_config;
+mod fns;
+mod info_config;
 
 use crate::ascii::*;
+use crate::color_config::*;
 use crate::fns::*;
+use crate::info_config::*;
 
 fn main() {
     let mut args: Vec<String> = env::args().collect();
     let mut overriden_ascii: Option<String> = None;
+    let mut info_custom_config: Option<String> = None;
+    let mut color_custom_config: Option<String> = None;
+    let mut use_info_custom_config = true;
+    let mut use_color_custom_config = true;
     let mut margin: i8 = 1;
-    let mut formatting = true;
-    for count in 0..args.len() {
-        let arg = &args[count];
 
-        match arg.as_str() {
+    for count in 0..args.len() {
+        match args[count].as_str() {
             "-h" | "--help" | "--usage" => return help(),
-            "-nf" | "-nc" | "--no-formatting" | "--no-color" => formatting = false,
+            "--ignore-color-config" => use_color_custom_config = false,
+            "--ignore-info-config" => use_info_custom_config = false,
             "-m" | "--margin" => {
                 if count + 1 < args.len() {
                     margin = args[count + 1].parse().unwrap();
@@ -28,9 +35,29 @@ fn main() {
             }
             "-o" | "--override" => {
                 if count + 1 < args.len() {
-                    overriden_ascii = Some(std::mem::replace(&mut args[count + 1], String::new()));
+                    overriden_ascii = Some(std::mem::take(&mut args[count + 1]));
                 } else {
                     println!("{} Missing argument for override.\n", "[ERROR]".red());
+                }
+            }
+            "-i" | "--info-config" => {
+                if count + 1 < args.len() {
+                    info_custom_config = Some(std::mem::take(&mut args[count + 1]));
+                } else {
+                    println!(
+                        "{} Missing argument for custom info config file.\n",
+                        "[ERROR]".red()
+                    );
+                }
+            }
+            "-c" | "--color-config" => {
+                if count + 1 < args.len() {
+                    color_custom_config = Some(std::mem::take(&mut args[count + 1]));
+                } else {
+                    println!(
+                        "{} Missing argument for custom color config file.\n",
+                        "[ERROR]".red()
+                    );
                 }
             }
             _ => {
@@ -39,51 +66,113 @@ fn main() {
         };
     }
 
-    info(formatting, overriden_ascii, margin);
+    info(
+        overriden_ascii,
+        margin,
+        use_info_custom_config,
+        use_color_custom_config,
+        info_custom_config,
+        color_custom_config,
+    );
 }
 
+#[derive(Clone)]
 struct InfoItem {
     title: &'static str,
     alignment_space: i8,
     icon: &'static str,
     value: String,
+}
+
+fn print_ascii(
+    ascii_art: String,
     color: Color,
+    overriden_colors: bool,
+    custom_color_config_file: Option<String>,
+) -> String {
+    if !overriden_colors {
+        match color {
+            Color::Green => ascii_art.green().bold().to_string(),
+            Color::Red => ascii_art.bright_red().bold().to_string(),
+            Color::Purple => ascii_art.purple().bold().to_string(),
+            Color::Yellow => ascii_art.yellow().bold().to_string(),
+            Color::Blue => ascii_art.blue().bold().to_string(),
+            Color::Black => ascii_art.black().bold().to_string(),
+            Color::White => ascii_art.white().bold().to_string(),
+        }
+    } else {
+        print_ascii(
+            ascii_art,
+            get_color_config(
+                "color0".to_string(),
+                overriden_colors,
+                custom_color_config_file.clone(),
+            ),
+            false,
+            custom_color_config_file,
+        )
+    }
 }
 
-#[derive(PartialEq)]
-enum Color {
-    Green,
-    Red,
-    Purple,
-    NoColor,
-}
-
-fn print_data(infos: &InfoItem, connector: &'static str) -> String {
-  let arrow = "~>";
-  let coloreds = match infos.color {
-    Color::Green => (connector.green().to_string(), infos.icon.green().to_string(), arrow.green().to_string()),
-    Color::Red => (connector.bright_red().to_string(), infos.icon.bright_red().to_string(), arrow.bright_red().to_string()),
-    Color::Purple => (connector.purple().to_string(), infos.icon.purple().to_string(), arrow.purple().to_string()),
-    Color::NoColor => (connector.to_string(), "".to_string(), arrow.to_string()),
-  };
-
-  let alignment_space = " ".repeat(infos.alignment_space as usize);
-
-  format!("{}{}  {}{}{}  {}", coloreds.0, coloreds.1, infos.title, alignment_space, coloreds.2, infos.value).to_string()
-}
-
-fn info(formatting: bool, overriden_ascii: Option<String>, margin: i8) {
-    let distroascii = match formatting {
-        false => format!("{}\n", get_distro_ascii(overriden_ascii)),
-        true => format!("{}\n", get_distro_ascii(overriden_ascii).blue().bold()),
+fn print_data(infos: &InfoItem, color: Color, connector: &'static str) -> String {
+    let arrow = "~>";
+    let coloreds = match color {
+        Color::Green => (
+            connector.green().to_string(),
+            infos.icon.green().to_string(),
+            arrow.green().to_string(),
+        ),
+        Color::Red => (
+            connector.bright_red().to_string(),
+            infos.icon.bright_red().to_string(),
+            arrow.bright_red().to_string(),
+        ),
+        Color::Purple => (
+            connector.purple().to_string(),
+            infos.icon.purple().to_string(),
+            arrow.purple().to_string(),
+        ),
+        Color::Yellow => (
+            connector.yellow().to_string(),
+            infos.icon.yellow().to_string(),
+            arrow.yellow().to_string(),
+        ),
+        Color::Blue => (
+            connector.blue().to_string(),
+            infos.icon.blue().to_string(),
+            arrow.blue().to_string(),
+        ),
+        Color::Black => (
+            connector.black().to_string(),
+            infos.icon.black().to_string(),
+            arrow.black().to_string(),
+        ),
+        Color::White => (connector.to_string(), "".to_string(), arrow.to_string()),
     };
 
-    let os = InfoItem {
-        title: "os",
-        alignment_space: 6,
+    let alignment_space = " ".repeat(infos.alignment_space as usize);
+
+    format!(
+        "{}{}  {}{}{}  {}",
+        coloreds.0, coloreds.1, infos.title, alignment_space, coloreds.2, infos.value
+    )
+    .to_string()
+}
+
+fn info(
+    overriden_ascii: Option<String>,
+    margin: i8,
+    use_custom_info_config: bool,
+    use_custom_color_config: bool,
+    custom_info_config_file: Option<String>,
+    custom_color_config_file: Option<String>,
+) {
+    let distro = InfoItem {
+        title: "distro",
+        alignment_space: 2,
         icon: "",
-        value: uname_s(None),
-        color: Color::Green,
+        value: get_os_release_pretty_name(overriden_ascii.clone(), "NAME")
+            .expect("Failed getting distro name"),
     };
 
     let hostname = InfoItem {
@@ -91,7 +180,6 @@ fn info(formatting: bool, overriden_ascii: Option<String>, margin: i8) {
         alignment_space: 4,
         icon: "󱩛",
         value: uname_n(),
-        color: Color::Green,
     };
 
     let shell = InfoItem {
@@ -99,7 +187,6 @@ fn info(formatting: bool, overriden_ascii: Option<String>, margin: i8) {
         alignment_space: 3,
         icon: "",
         value: shell_name(),
-        color: Color::Green,
     };
 
     let kernel = InfoItem {
@@ -107,7 +194,6 @@ fn info(formatting: bool, overriden_ascii: Option<String>, margin: i8) {
         alignment_space: 2,
         icon: "",
         value: uname_r(),
-        color: Color::Green,
     };
 
     let packs = InfoItem {
@@ -115,15 +201,13 @@ fn info(formatting: bool, overriden_ascii: Option<String>, margin: i8) {
         alignment_space: 3,
         icon: "󰿺",
         value: get_packages(),
-        color: Color::Green,
     };
-    
+
     let user = InfoItem {
         title: "user",
         alignment_space: 4,
         icon: "",
         value: whoami(),
-        color: Color::Red,
     };
 
     let term = InfoItem {
@@ -131,7 +215,6 @@ fn info(formatting: bool, overriden_ascii: Option<String>, margin: i8) {
         alignment_space: 4,
         icon: "",
         value: get_terminal(),
-        color: Color::Red,
     };
 
     let de = InfoItem {
@@ -139,15 +222,13 @@ fn info(formatting: bool, overriden_ascii: Option<String>, margin: i8) {
         alignment_space: 3,
         icon: "",
         value: get_wm(),
-        color: Color::Red,
     };
-    
+
     let cpu = InfoItem {
         title: "cpu",
         alignment_space: 5,
         icon: "󰍛",
         value: get_cpu_info(),
-        color: Color::Purple,
     };
 
     let mem = InfoItem {
@@ -155,7 +236,13 @@ fn info(formatting: bool, overriden_ascii: Option<String>, margin: i8) {
         alignment_space: 5,
         icon: "",
         value: get_mem(),
-        color: Color::Purple,
+    };
+
+    let res = InfoItem {
+        title: "res",
+        alignment_space: 5,
+        icon: "",
+        value: get_res(),
     };
 
     let uptime = InfoItem {
@@ -166,9 +253,8 @@ fn info(formatting: bool, overriden_ascii: Option<String>, margin: i8) {
             Err(_err) => "".to_string(),
             Ok(time) => time,
         },
-        color: Color::Purple,
     };
-    
+
     let gpu = InfoItem {
         title: "gpu",
         alignment_space: 5,
@@ -177,44 +263,95 @@ fn info(formatting: bool, overriden_ascii: Option<String>, margin: i8) {
             Err(_err) => "".to_string(),
             Ok(gpu_info) => gpu_info,
         },
-        color: Color::Purple,
     };
 
+    let parse_json_lists = |set| {
+        let mut info_set: Vec<InfoItem> = vec![];
+        for i in get_info(set, use_custom_info_config, custom_info_config_file.clone()) {
+            let info = match i.as_str() {
+                "os" | "distro" => &distro,
+                "host" | "hostname" => &hostname,
+                "shell" => &shell,
+                "kernel" => &kernel,
+                "packs" | "packages" => &packs,
+                "user" | "username" => &user,
+                "term" | "terminal" => &term,
+                "de" | "dewm" | "wm" => &de,
+                "cpu" | "processor" => &cpu,
+                "gpu" | "graphics" => &gpu,
+                "mem" | "memory" => &mem,
+                "uptime" => &uptime,
+                "res" | "display" | "resolution" => &res,
+                _ => &distro,
+            };
+            info_set.push(info.clone());
+        }
+        info_set
+    };
+
+    let info_set1 = parse_json_lists("info1");
+    let info_set2 = parse_json_lists("info2");
+    let info_set3 = parse_json_lists("info3");
+
     let margin_spaces = " ".repeat(margin as usize);
-    let infos1 = vec![os, hostname, shell, kernel, packs];
-    let infos2 = vec![user, term, de];
-    let infos3 = vec![cpu, gpu, mem, uptime];
+    let distroascii = print_ascii(
+        get_distro_ascii(overriden_ascii),
+        get_color_config(
+            "color0".to_string(),
+            use_custom_color_config,
+            custom_color_config_file.clone(),
+        ),
+        !use_custom_color_config,
+        custom_color_config_file.clone(),
+    );
+    let infos1 = (1, info_set1);
+    let infos2 = (2, info_set2);
+    let infos3 = (3, info_set3);
     let mut info_sets = vec![infos1, infos2, infos3];
 
-    println!("{}", distroascii);
+    println!("{}\n", distroascii);
 
     for (idx, infos) in info_sets.iter_mut().enumerate() {
         if idx > 0 {
-            println!("");
+            println!();
         }
-        loop_over_data(infos, margin_spaces.clone(), formatting)
+
+        loop_over_data(
+            &mut infos.1,
+            margin_spaces.clone(),
+            infos.0,
+            use_custom_color_config,
+            custom_color_config_file.clone(),
+        );
     }
 }
 
-fn loop_over_data(list: &mut Vec<InfoItem>, margin: String, formatting: bool) {
+fn loop_over_data(
+    list: &mut Vec<InfoItem>,
+    margin: String,
+    section: i8,
+    use_custom_config: bool,
+    custom_color_config_file: Option<String>,
+) {
+    list.retain(|s| !s.value.is_empty());
     let last = list.len();
+
     for (idx, item) in list.iter_mut().enumerate() {
-        if !item.value.is_empty() {
-            let connector: &'static str;
+        let connector: &'static str;
+        let color = get_color_config(
+            format!("color{}", section),
+            use_custom_config,
+            custom_color_config_file.clone(),
+        );
 
-            if !formatting {
-                item.color = Color::NoColor;
-            }
-
-            if idx == 0 {
-                connector = "╭─";
-            } else if idx == last - 1 {
-                connector = "╰─";
-            } else {
-                connector = "├─";
-            }
-            
-            println!("{}{}", margin, print_data(item, connector));
+        if idx == 0 {
+            connector = "╭─";
+        } else if idx == last - 1 {
+            connector = "╰─";
+        } else {
+            connector = "├─";
         }
+
+        println!("{}{}", margin, print_data(item, color, connector));
     }
 }

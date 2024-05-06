@@ -1,24 +1,46 @@
 use libmacchina::{traits::MemoryReadout as _, MemoryReadout};
+use rayon::prelude::*;
 use std::{
     env,
-    fs::{read_to_string, File},
+    fs::{self, read_to_string, File},
     io::{BufRead, BufReader, Error, Read},
-    process::{Command, Output, Stdio}, 
+    process::{Command, Stdio},
+    sync::{Arc, Mutex},
     time::Duration,
 };
 
 pub fn help() {
-    println!("Usage: rsftch [OPTION...] [OVERRIDE] [MARGIN]\n");
-    println!("  -h, --help, --usage   Bring up this menu");
-    println!("  --no-color, --no-formatting");
-    println!("  -nc, -nf              Remove icons, colors and such.");
-    println!("  -o, --override        Override distribution, changes ASCII.");
-    println!("  -m, --margin          Add margin to the info sections, default 1.")
+    println!("Usage: rsftch [OPTION...] [OVERRIDE] [MARGIN] [CONFIG FILE(s)]\n");
+    println!("  -h, --help, --usage         Bring up this menu");
+    println!(
+        "  -o, --override              Overrides distribution, affects ASCII and \"distro\" info."
+    );
+    println!("  -m, --margin                Add margin to the info sections, default 1.");
+    println!("  -c, --color-config          Specify another color config file, to be used instead of the default one.");
+    println!("  -i, --info-config           Specify another info config file, to be used instead of the default one.");
+    println!(
+        "      --ignore-color-config   Ignores the custom color config and uses the default one."
+    );
+    println!(
+        "      --ignore-info-config    Ignores the custom info config and uses the default one."
+    );
+    println!("      --ignore-config         Ignores both configs and uses the default ones.\n");
+    println!("Info config is located at:  ~/.config/rsftch/info.json");
+    println!("Color config is located at: ~/.config/rsftch/colors.json");
 }
 
 pub fn whoami() -> String {
     let output = Command::new("whoami").output().expect("whoami failed");
     String::from_utf8_lossy(&output.stdout).trim().to_string()
+}
+
+pub fn home_dir() -> &'static str {
+    if let Some(home) = option_env!("HOME") {
+        return home;
+    } else {
+        eprintln!("Couldn't find home directory, are you on a Unix-like operating system? \nIf you are, use the \"--no-config\" flag, or the \"--config\" flag and set \nan other file to act as the config file. ");
+        return "";
+    }
 }
 
 pub fn get_cpu_info() -> String {
@@ -44,252 +66,378 @@ pub fn get_cpu_info() -> String {
 }
 
 fn get_package_managers() -> Vec<&'static str> {
-    let possible_managers = vec!["xbps-query", "dnf", "dkpg-query", "rpm", "apt", "pacman", "emerge", "yum", "zypper", "apk", "pkg_info", "pkg"];
-    let mut installed_managers: Vec<&'static str> = Vec::new();
-    for manager in possible_managers {
-        let version_command = match manager {
+    let possible_managers = vec![
+        "xbps-query",
+        "dnf",
+        "dkpg-query",
+        "rpm",
+        "apt",
+        "pacman",
+        "emerge",
+        "yum",
+        "zypper",
+        "apk",
+        "pkg_info",
+        "pkg",
+    ];
+    let installed_managers: Arc<Mutex<Vec<&'static str>>> = Arc::new(Mutex::new(Vec::new()));
+    possible_managers.par_iter().for_each(|manager| {
+        let version_command = match *manager {
             "pkg_info" => "-V",
+            "emerge" => "--help",
             _ => "--version",
         };
-        
+
         if let Ok(result) = Command::new(manager).arg(version_command).output() {
             if result.status.success() {
-                installed_managers.push(manager);
+                installed_managers.lock().unwrap().push(manager);
             }
         }
-    }
+    });
 
-    installed_managers
+    let vec_managers = installed_managers.lock().unwrap().to_vec();
+    vec_managers
 }
 
 pub fn get_packages() -> String {
     let installed_managers = get_package_managers();
-    let mut packs_numbers: Vec<i16> = Vec::new();
-    for i in installed_managers {
-        match i {
-            "xbps-query" => { //xpbs-query -l
-                if let Ok(output) = Command::new(i)
+    let packs_numbers: Arc<Mutex<Vec<i16>>> = Arc::new(Mutex::new(Vec::new()));
+    installed_managers.par_iter().for_each(|manager| {
+        match *manager {
+            "xbps-query" => {
+                //xpbs-query -l
+                if let Ok(output) = Command::new(*manager)
                     .args(["-l"])
                     .stdout(Stdio::piped())
                     .spawn()
-                    .and_then(|child| Command::new("wc")
-                        .args(&["-l"])
-                        .stdin(child.stdout.unwrap())
-                        .output())
+                    .and_then(|child| {
+                        Command::new("wc")
+                            .args(["-l"])
+                            .stdin(child.stdout.unwrap())
+                            .output()
+                    })
                 {
                     output.status.success().then(|| {
-                        String::from_utf8(output.stdout)
+                        if let Some(count) = String::from_utf8(output.stdout)
                             .ok()
                             .and_then(|count_str| count_str.trim().parse::<i16>().ok())
-                            .map(|count| packs_numbers.push(count));
+                        {
+                            packs_numbers.lock().unwrap().push(count)
+                        }
                     });
                 }
             }
-            "dnf" => { // dnf list installed
-                if let Ok(output) = Command::new(i)
+            "dnf" => {
+                // dnf list installed
+                if let Ok(output) = Command::new(*manager)
                     .args(["list", "installed"])
                     .stdout(Stdio::piped())
                     .spawn()
-                    .and_then(|child| Command::new("wc")
-                        .args(&["-l"])
-                        .stdin(child.stdout.unwrap())
-                        .output())
+                    .and_then(|child| {
+                        Command::new("wc")
+                            .args(["-l"])
+                            .stdin(child.stdout.unwrap())
+                            .output()
+                    })
                 {
                     output.status.success().then(|| {
-                        String::from_utf8(output.stdout)
+                        if let Some(count) = String::from_utf8(output.stdout)
                             .ok()
                             .and_then(|count_str| count_str.trim().parse::<i16>().ok())
-                            .map(|count| packs_numbers.push(count));
+                        {
+                            packs_numbers.lock().unwrap().push(count)
+                        }
                     });
                 }
             }
-            "dpkg-query" => { // dpkg-query -f $(binary:Package) -W
-                if let Ok(output) = Command::new(i)
+            "dpkg-query" => {
+                // dpkg-query -f $(binary:Package) -W
+                if let Ok(output) = Command::new(*manager)
                     .args(["-f", "$(binary:Package)", "-W"])
                     .stdout(Stdio::piped())
                     .spawn()
-                    .and_then(|child| Command::new("wc")
-                        .args(&["-l"])
-                        .stdin(child.stdout.unwrap())
-                        .output())
+                    .and_then(|child| {
+                        Command::new("wc")
+                            .args(["-l"])
+                            .stdin(child.stdout.unwrap())
+                            .output()
+                    })
                 {
                     output.status.success().then(|| {
-                        String::from_utf8(output.stdout)
+                        if let Some(count) = String::from_utf8(output.stdout)
                             .ok()
                             .and_then(|count_str| count_str.trim().parse::<i16>().ok())
-                            .map(|count| packs_numbers.push(count));
+                        {
+                            packs_numbers.lock().unwrap().push(count)
+                        }
                     });
                 }
             }
-            "rpm" => { // rpm -qa --last
-                if let Ok(output) = Command::new(i)
+            "rpm" => {
+                // rpm -qa --last
+                if let Ok(output) = Command::new(*manager)
                     .args(["-qa", "--last"])
                     .stdout(Stdio::piped())
                     .spawn()
-                    .and_then(|child| Command::new("wc")
-                        .args(&["-l"])
-                        .stdin(child.stdout.unwrap())
-                        .output())
+                    .and_then(|child| {
+                        Command::new("wc")
+                            .args(["-l"])
+                            .stdin(child.stdout.unwrap())
+                            .output()
+                    })
                 {
                     output.status.success().then(|| {
-                        String::from_utf8(output.stdout)
+                        if let Some(count) = String::from_utf8(output.stdout)
                             .ok()
                             .and_then(|count_str| count_str.trim().parse::<i16>().ok())
-                            .map(|count| packs_numbers.push(count));
+                        {
+                            packs_numbers.lock().unwrap().push(count)
+                        }
                     });
                 }
             }
-            "apt" => { // apt list --installed
+            "apt" => {
+                // apt list --installed
                 if let Ok(output) = Command::new("apt-cache")
                     .args(["pkgnames"])
                     .stdout(Stdio::piped())
                     .spawn()
-                    .and_then(|child| Command::new("wc")
-                        .args(&["-l"])
-                        .stdin(child.stdout.unwrap())
-                        .output())
+                    .and_then(|child| {
+                        Command::new("wc")
+                            .args(["-l"])
+                            .stdin(child.stdout.unwrap())
+                            .output()
+                    })
                 {
                     output.status.success().then(|| {
-                        String::from_utf8(output.stdout)
+                        if let Some(count) = String::from_utf8(output.stdout)
                             .ok()
                             .and_then(|count_str| count_str.trim().parse::<i16>().ok())
-                            .map(|count| packs_numbers.push(count));
+                        {
+                            packs_numbers.lock().unwrap().push(count)
+                        }
                     });
                 }
             }
-            "pacman" => { // pacman -Q
-                if let Ok(output) = Command::new(i)
+            "pacman" => {
+                // pacman -Q
+                if let Ok(output) = Command::new(*manager)
                     .args(["-Q"])
                     .stdout(Stdio::piped())
                     .spawn()
-                    .and_then(|child| Command::new("wc")
-                        .args(&["-l"])
-                        .stdin(child.stdout.unwrap())
-                        .output())
+                    .and_then(|child| {
+                        Command::new("wc")
+                            .args(["-l"])
+                            .stdin(child.stdout.unwrap())
+                            .output()
+                    })
                 {
                     output.status.success().then(|| {
-                        String::from_utf8(output.stdout)
+                        if let Some(count) = String::from_utf8(output.stdout)
                             .ok()
                             .and_then(|count_str| count_str.trim().parse::<i16>().ok())
-                            .map(|count| packs_numbers.push(count));
+                        {
+                            packs_numbers.lock().unwrap().push(count)
+                        }
                     });
                 }
             }
-            "emerge" => { // qlist -I
-                if let Ok(output) = Command::new(i)
+            "emerge" => {
+                // qlist -I
+                if get_os_release_pretty_name(None, "ID")
+                    .unwrap_or("".to_string())
+                    .to_ascii_lowercase()
+                    .contains("funtoo")
+                {
+                    if let Ok(output) = Command::new("find")
+                        .args(["/var/db/pkg/"])
+                        .args(["-name"])
+                        .args(["PF"])
+                        .stdout(Stdio::piped())
+                        .spawn()
+                        .and_then(|child| {
+                            Command::new("wc")
+                                .args(["-l"])
+                                .stdin(child.stdout.unwrap())
+                                .output()
+                        })
+                    {
+                        output.status.success().then(|| {
+                            if let Some(count) = String::from_utf8(output.stdout)
+                                .ok()
+                                .and_then(|count_str| count_str.trim().parse::<i16>().ok())
+                            {
+                                packs_numbers.lock().unwrap().push(count)
+                            }
+                        });
+                    }
+                } else if let Ok(output) = Command::new(*manager)
                     .args(["-I"])
                     .stdout(Stdio::piped())
                     .spawn()
-                    .and_then(|child| Command::new("wc")
-                        .args(&["-l"])
-                        .stdin(child.stdout.unwrap())
-                        .output())
+                    .and_then(|child| {
+                        Command::new("wc")
+                            .args(["-l"])
+                            .stdin(child.stdout.unwrap())
+                            .output()
+                    })
                 {
                     output.status.success().then(|| {
-                        String::from_utf8(output.stdout)
+                        if let Some(count) = String::from_utf8(output.stdout)
                             .ok()
                             .and_then(|count_str| count_str.trim().parse::<i16>().ok())
-                            .map(|count| packs_numbers.push(count));
+                        {
+                            packs_numbers.lock().unwrap().push(count)
+                        }
                     });
                 }
             }
-            "yum" => { // yum list installed
-                if let Ok(output) = Command::new(i)
+            "yum" => {
+                // yum list installed
+                if let Ok(output) = Command::new(*manager)
                     .args(["list", "installed"])
                     .stdout(Stdio::piped())
                     .spawn()
-                    .and_then(|child| Command::new("wc")
-                        .args(&["-l"])
-                        .stdin(child.stdout.unwrap())
-                        .output())
+                    .and_then(|child| {
+                        Command::new("wc")
+                            .args(["-l"])
+                            .stdin(child.stdout.unwrap())
+                            .output()
+                    })
                 {
                     output.status.success().then(|| {
-                        String::from_utf8(output.stdout)
+                        if let Some(count) = String::from_utf8(output.stdout)
                             .ok()
                             .and_then(|count_str| count_str.trim().parse::<i16>().ok())
-                            .map(|count| packs_numbers.push(count));
+                        {
+                            packs_numbers.lock().unwrap().push(count)
+                        }
                     });
                 }
             }
-            "zypper" => { //zypper se
-                if let Ok(output) = Command::new(i)
+            "zypper" => {
+                //zypper se
+                if let Ok(output) = Command::new(*manager)
                     .args(["se"])
                     .stdout(Stdio::piped())
                     .spawn()
-                    .and_then(|child| Command::new("wc")
-                        .args(&["-l"])
-                        .stdin(child.stdout.unwrap())
-                        .output())
+                    .and_then(|child| {
+                        Command::new("wc")
+                            .args(["-l"])
+                            .stdin(child.stdout.unwrap())
+                            .output()
+                    })
                 {
                     output.status.success().then(|| {
-                        String::from_utf8(output.stdout)
+                        if let Some(count) = String::from_utf8(output.stdout)
                             .ok()
                             .and_then(|count_str| count_str.trim().parse::<i16>().ok())
-                            .map(|count| packs_numbers.push(count));
+                        {
+                            packs_numbers.lock().unwrap().push(count)
+                        }
                     });
                 }
             }
-            "apk" => { // apk list --installed
-                if let Ok(output) = Command::new(i)
+            "apk" => {
+                // apk list --installed
+                if let Ok(output) = Command::new(*manager)
                     .args(["list", "--installed"])
                     .stdout(Stdio::piped())
                     .spawn()
-                    .and_then(|child| Command::new("wc")
-                        .args(&["-l"])
-                        .stdin(child.stdout.unwrap())
-                        .output())
+                    .and_then(|child| {
+                        Command::new("wc")
+                            .args(["-l"])
+                            .stdin(child.stdout.unwrap())
+                            .output()
+                    })
                 {
                     output.status.success().then(|| {
-                        String::from_utf8(output.stdout)
+                        if let Some(count) = String::from_utf8(output.stdout)
                             .ok()
                             .and_then(|count_str| count_str.trim().parse::<i16>().ok())
-                            .map(|count| packs_numbers.push(count));
+                        {
+                            packs_numbers.lock().unwrap().push(count)
+                        }
                     });
                 }
             }
-            "pkg_info" => { // ls /usr/pkg/pkgdb/
+            "pkg_info" => {
+                // ls /usr/pkg/pkgdb/
                 if let Ok(output) = Command::new("ls")
                     .args(["/usr/pkg/pkgdb/"])
                     .stdout(Stdio::piped())
                     .spawn()
-                    .and_then(|child| Command::new("wc")
-                        .args(&["-l"])
-                        .stdin(child.stdout.unwrap())
-                        .output())
+                    .and_then(|child| {
+                        Command::new("wc")
+                            .args(["-l"])
+                            .stdin(child.stdout.unwrap())
+                            .output()
+                    })
                 {
                     output.status.success().then(|| {
-                        String::from_utf8(output.stdout)
+                        if let Some(count) = String::from_utf8(output.stdout)
                             .ok()
                             .and_then(|count_str| count_str.trim().parse::<i16>().ok())
-                            .map(|count| packs_numbers.push(count));
+                        {
+                            packs_numbers.lock().unwrap().push(count)
+                        }
                     });
                 }
             }
-            "pkg" => { // pkg info
+            "pkg" => {
+                // pkg info
                 if let Ok(output) = Command::new("pkg")
                     .args(["info"])
                     .stdout(Stdio::piped())
                     .spawn()
-                    .and_then(|child| Command::new("wc")
-                        .args(&["-l"])
-                        .stdin(child.stdout.unwrap())
-                        .output())
+                    .and_then(|child| {
+                        Command::new("wc")
+                            .args(["-l"])
+                            .stdin(child.stdout.unwrap())
+                            .output()
+                    })
                 {
                     output.status.success().then(|| {
-                        String::from_utf8(output.stdout)
+                        if let Some(count) = String::from_utf8(output.stdout)
                             .ok()
                             .and_then(|count_str| count_str.trim().parse::<i16>().ok())
-                            .map(|count| packs_numbers.push(count));
+                        {
+                            packs_numbers.lock().unwrap().push(count)
+                        }
                     });
                 }
             }
             _ => {}
         }
+    });
+
+    let total_packages: i16 = packs_numbers.lock().unwrap().iter().sum();
+    total_packages.to_string()
+}
+
+pub fn get_res() -> String {
+    let first_part = Command::new("xrandr")
+        .arg("--current")
+        .stdout(Stdio::piped())
+        .spawn()
+        .expect("Failed to execute command");
+
+    if let Ok(output) = Command::new("grep")
+        .arg("\'*\'")
+        .stdin(first_part.stdout.unwrap())
+        .output()
+    {
+        let output = String::from_utf8_lossy(&output.stdout);
+        for line in output.lines() {
+            let values: Vec<&str> = line.split_whitespace().collect();
+            println!("{values:?}");
+        }
+    } else {
+        println!("command didnt succeed");
     }
 
-    let total_packages: i16 = packs_numbers.iter().sum();
-    total_packages.to_string()
-} 
+    return "this function doesnt work (yet)".to_string();
+}
 
 pub fn get_gpu_info() -> Result<String, Error> {
     let output = Command::new("lspci").arg("-nnk").output()?;
@@ -310,12 +458,12 @@ pub fn get_gpu_info() -> Result<String, Error> {
                 (vendor_str, 0)
             };
             let start_index = start_index + prefix_len;
-            let start_index = line[start_index..].find("[").ok_or(Error::new(
+            let start_index = line[start_index..].find('[').ok_or(Error::new(
                 std::io::ErrorKind::NotFound,
                 "GPU name not found",
             ))? + start_index
                 + 1;
-            let end_index = line[start_index..].find("]").ok_or(Error::new(
+            let end_index = line[start_index..].find(']').ok_or(Error::new(
                 std::io::ErrorKind::NotFound,
                 "GPU name not found",
             ))? + start_index;
@@ -367,26 +515,30 @@ fn format_duration(duration: Duration) -> String {
     uptime_string.trim_end_matches(", ").to_string()
 }
 
-pub fn get_os_release_pretty_name(overriden_ascii: Option<String>) -> Option<String> {
-    if overriden_ascii != None {
+fn search_file(custom_paths: Vec<&'static str>, search_variable: &str) -> Option<String> {
+    for path in custom_paths.iter() {
+        if let Ok(content) = fs::read_to_string(path) {
+            for line in content.lines() {
+                if line.starts_with(search_variable) {
+                    if let Some(name) = line.split('=').nth(1) {
+                        return Some(name.trim_matches('"').to_string());
+                    }
+                }
+            }
+        }
+    }
+    None
+}
+
+pub fn get_os_release_pretty_name(
+    overriden_ascii: Option<String>,
+    identifier: &str,
+) -> Option<String> {
+    if overriden_ascii.is_some() {
         return overriden_ascii;
     }
 
-    let output: Output = match Command::new("bash")
-        .arg("-c")
-        .arg("awk -F'=' '/^ID=/ {print tolower($2)}' /etc/*-release 2> /dev/null")
-        .output()
-    {
-        Ok(output) => output,
-        Err(_) => return None,
-    };
-
-    if output.status.success() {
-        let stdout = String::from_utf8(output.stdout).ok()?;
-        Some(stdout.trim().to_string())
-    } else {
-        None
-    }
+    search_file(vec!["/etc/os-release", "/etc/lsb-release"], identifier)
 }
 
 pub fn format_bytes(kbytes: u64) -> String {
@@ -442,7 +594,7 @@ pub fn uname_r() -> String {
 }
 
 pub fn uname_s(overriden_ascii: Option<String>) -> String {
-    if overriden_ascii != None {
+    if overriden_ascii.is_some() {
         return match overriden_ascii {
             Some(str) => str,
             None => String::new(),
@@ -470,6 +622,5 @@ pub fn shell_name() -> String {
 }
 
 pub fn get_terminal() -> String {
-    let term = env::var("TERM").unwrap_or("".to_string());
-    return term;
+    env::var("TERM").unwrap_or("".to_string())
 }

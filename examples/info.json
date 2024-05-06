@@ -1,0 +1,5 @@
+{
+  "info1": [ "os", "kernel", "hostname" ],
+  "info2": [ "user", "term", "shell", "dewm" ],
+  "info3": [ "processor", "graphics", "mem" ]
+}

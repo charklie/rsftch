@@ -1,25 +1,19 @@
 # Rsftch
-
-##### _Lightning fast hardware fetch written in rust._
-
 ### Screenshots
 
-![image](https://github.com/charklie/rsftch/assets/157241212/9c465f98-259d-4db9-a07d-b93f3690080f)
-![image](https://github.com/charklie/rsftch/assets/157241212/a745b58f-d42a-4a6e-9c15-2504b8442ed5)
-![image](https://github.com/charklie/rsftch/assets/157241212/f6ff6352-b7da-4e18-a867-7f0c62f62a35)
-
-### Supported distros
+### Ascii supported distros
 - Arch Linux
 - Debian
 - Fedora
 - Endeavour OS
 - Void Linux
 - Ubuntu
-- OpenSuse
+- *Suse
 - Raspbian
 - Linux Mint
 - MX Linux
 - Gentoo
+- Funtoo
 - Slackware
 - NixOS
 - Kali Linux
@@ -27,7 +21,22 @@
 - FreeBSD
 - NetBSD
 
-* Other distros wont have a custom title, only "Rust Fetch"
+##### Others won't have a custom title, only "Rsftch"
+
+### Supported package managers
+- xbps
+- dnf
+- dpkg
+- rpm
+- apt
+- pacman
+- emerge
+- yum
+- zypper
+- apk
+- pkg
+
+\* Some might not work, and if they don't, please file an issue.
 
 ### Dependencies
 - `pciutils`
@@ -67,6 +76,60 @@ Or, if you prefer to build it from source:
 cd /usr/pkgsrc/sysutils/rsftch
 make install
 ```
+
+### Configuration
+#### Info:
+The info configuration should be located at `~/.config/rsftch/info.json`, and it could look something like this;
+```json
+{
+    "info1": [ "os", "kernel", "packs" ],
+    "info2": [ "user", "host" ],
+    "info3": [ "cpu", "gpu", "mem" ]
+}
+```
+Each info(number) is the section.
+This is a very simple example but all the options are as follows: 
+- os / distro
+- host / hostname
+- shell
+- kernel
+- packs / packages
+- user / username
+- term / terminal
+- de / dewm / wm
+- cpu / processor
+- gpu / graphics
+- mem / memory
+- uptime
+- res / display / resolution
+
+#### Colors
+The color configuration should be located at `~/.config/rsftch/colors.json`, and it could look something like this:
+```json
+{
+  "colors": {
+    "color0": "blue",
+    "color1": "red",
+    "color2": "green",
+    "color3": "yellow"
+  }
+}
+```
+Other available colors are as follows:
+- green
+- red
+- purple / magenta
+- yellow
+- blue
+- black
+- white
+
+The number followed by "color" means:
+- `color0`: Ascii text on top
+- `color1`: First info section
+- `color2`: Second info section
+- `color3`: Last info section
+
 ### Common issues
 ##### Running `rsftch` in terminal doesn't work (command not found)
 Solution: (If you installed with cargo) Add ~/.cargo/bin/ to PATH, how varies from shell to shell, here are some popular ones:
@@ -81,25 +144,33 @@ Nushell:
 `let-env PATH = ($env.PATH | prepend $"($env.HOME)/.cargo/bin")`
 
 Elvish:
-`set paths = [~/.cargo/bin/ $@paths`]
+`set paths = [~/.cargo/bin/ $@paths]`
 
 If none of these work, or you are unsure how to do this in your shell, consider moving the binary to /usr/bin, example command:
 `sudo mv ~/.cargo/bin/rsftch /usr/bin`
+
+#### Other issues
+File an issue.
+
 ### Usage
 ```
-Usage: rsftch [OPTION...] [OVERRIDE] [MARGIN]
+Usage: rsftch [OPTION...] [OVERRIDE] [MARGIN] [CONFIG FILE(s)]
 
-  -h, --help, --usage   Bring up this menu
-  --no-color, --no-formatting
-  -nc, -nf              Remove icons, colors and such.
-  -o, --override        Override distribution, changes ASCII.
-  -m, --margin          Add margin to the info sections, default 1.
+  -h, --help, --usage         Bring up this menu
+  -o, --override              Overrides distribution, affects ASCII and "distro" info.
+  -m, --margin                Add margin to the info sections, default 1.
+  -c, --color-config          Specify another color config file, to be used instead of the default one.
+  -i, --info-config           Specify another info config file, to be used instead of the default one.
+      --ignore-color-config   Ignores the custom color config and uses the default one.
+      --ignore-info-config    Ignores the custom info config and uses the default one.
+      --ignore-config         Ignores both configs and uses the default ones.
 ```
 ### Time comparison
-- Rsftch: 35.21 milliseconds
+- Rsftch: 26.52 milliseconds
 - Neofetch: 284.03 milliseconds
 - Screeenfetch: 832.59 milliseconds
-- Hyfetch: 1.82 seconds (💀)
+
+###### NOTE: Timing varies heavily depending on e.g. what package manager your distro uses, these times are from my system. (arch + pacman) 
 
 ### Compatability
 Currently Rsftch only works on GNU/Linux, (most) BSD distributions and (probably) Mac OS.
@@ -108,9 +179,6 @@ Currently Rsftch only works on GNU/Linux, (most) BSD distributions and (probably
 (If) You're wondering why I didn't use clap for command-line argument parsing, I've personally found it slow, and if I do get it to be somewhat fast, its too easy and first rsftch was meant to be a project for me to learn rust so I tried to complicate (some) things and making them in pure rust instead of using a crate to do it for me.
 
 #### Todo
-- [ ] Add more distros
-- [ ] Add more info (resolution)
-- [X] Add more info (packages)
-- [ ] Rewrite memory function to rid of libmacchina dep.
-- [ ] Add -c1, -c2, -c3 options to change colors of sections
-- [ ] Optimize packages function
+- [X] Configuration via JSON
+- [ ] Add TOML / JSONC support
+- [ ] Add support for more info sections (?)

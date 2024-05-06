@@ -42,6 +42,7 @@
 
 ### Dependencies
 - `pciutils`
+- `xrandr`
 - Any nerdfont
 
 ### Installation

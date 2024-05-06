@@ -12,7 +12,6 @@ categories = ["command-line-utilities"]
 
 [dependencies]
 colored = "2.1.0"
-itertools = "0.12.1"
 libmacchina = "7.2.2"
 rayon = "1.10.0"
 serde = { version = "1.0.200", features = [ "derive" ] }

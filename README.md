@@ -1,5 +1,6 @@
 # Rsftch
 ### Screenshots
+![image](https://github.com/charklie/rsftch/assets/157241212/41644bb7-b0e4-4811-8837-e9b02a7fb5ba)
 
 ### Ascii supported distros
 - Arch Linux

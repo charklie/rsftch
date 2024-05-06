@@ -272,7 +272,7 @@ fn info(
     let parse_json_lists = |set| {
         let mut info_set: Vec<InfoItem> = vec![];
         for i in get_info(set, use_custom_info_config, custom_info_config_file.clone()) {
-            let info = match i.as_str() {
+            let info = match i.to_ascii_lowercase().as_str() {
                 "os" | "distro" => &distro,
                 "host" | "hostname" => &hostname,
                 "shell" => &shell,

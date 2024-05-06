@@ -48,7 +48,7 @@ impl JsonColors {
 
     pub fn get_color_by_section(&self, section: &str) -> Option<Color> {
         match self.colors.get(section) {
-            Some(color_str) => match color_str.as_str() {
+            Some(color_str) => match color_str.to_ascii_lowercase().as_str() {
                 "green" => Some(Color::Green),
                 "red" => Some(Color::Red),
                 "purple" | "magenta" => Some(Color::Purple),

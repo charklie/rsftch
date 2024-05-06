@@ -416,27 +416,27 @@ pub fn get_packages() -> String {
 }
 
 pub fn get_res() -> String {
-    let first_part = Command::new("xrandr")
-        .arg("--current")
-        .stdout(Stdio::piped())
-        .spawn()
-        .expect("Failed to execute command");
-
-    if let Ok(output) = Command::new("grep")
-        .arg("\'*\'")
-        .stdin(first_part.stdout.unwrap())
+    let output = Command::new("xrandr")
+        .arg("--query")
         .output()
-    {
-        let output = String::from_utf8_lossy(&output.stdout);
-        for line in output.lines() {
-            let values: Vec<&str> = line.split_whitespace().collect();
-            println!("{values:?}");
-        }
-    } else {
-        println!("command didnt succeed");
-    }
+        .expect("Failed to execute xrandr command");
 
-    return "this function doesnt work (yet)".to_string();
+    String::from_utf8_lossy(&output.stdout)
+        .lines()
+        .filter_map(|line| {
+            if let Some(index) = line.find(" connected") {
+                let line = &line[index + 1..];
+                if let Some(resolution) = line.split_whitespace().find(|s| s.contains('x')) {
+                    Some(resolution.split('+').next().unwrap_or("").to_string())
+                } else {
+                    None
+                }
+            } else {
+                None
+            }
+        })
+        .collect::<Vec<String>>()
+        .join(", ")
 }
 
 pub fn get_gpu_info() -> Result<String, Error> {

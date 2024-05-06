@@ -25,6 +25,10 @@ fn main() {
             "-h" | "--help" | "--usage" => return help(),
             "--ignore-color-config" => use_color_custom_config = false,
             "--ignore-info-config" => use_info_custom_config = false,
+            "--ignore-config" => {
+                use_color_custom_config = false;
+                use_info_custom_config = false;
+            }
             "-m" | "--margin" => {
                 if count + 1 < args.len() {
                     margin = args[count + 1].parse().unwrap();
@@ -70,7 +74,7 @@ fn main() {
         overriden_ascii,
         margin,
         use_info_custom_config,
-        use_color_custom_config,
+        !use_color_custom_config,
         info_custom_config,
         color_custom_config,
     );
@@ -105,7 +109,7 @@ fn print_ascii(
             ascii_art,
             get_color_config(
                 "color0".to_string(),
-                overriden_colors,
+                !overriden_colors,
                 custom_color_config_file.clone(),
             ),
             false,

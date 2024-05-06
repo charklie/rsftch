@@ -184,3 +184,8 @@ Currently Rsftch only works on GNU/Linux, (most) BSD distributions and (probably
 - [X] Configuration via JSON
 - [ ] Add TOML / JSONC support
 - [ ] Add support for more info sections (?)
+
+### Thanks
+Thank you to:
+- @siris for helping me with speeding up everything massively.
+- @0323pin for publishing rsftch on NetBSD as a package. 

@@ -67,13 +67,17 @@ pub fn get_color_config(
     overriden_colors: bool,
     custom_file: Option<String>,
 ) -> Color {
-    let path = match custom_file {
-        Some(location) => location,
-        None => format!("{}/.config/rsftch/colors.json", home_dir()),
-    };
+    let mut path =
+        custom_file.unwrap_or_else(|| format!("{}/.config/rsftch/colors.json", home_dir()));
 
-    let colors = JsonColors::load_from_file(path.as_str(), overriden_colors).unwrap();
-    colors
-        .get_color_by_section(section.as_str())
-        .expect("Color config exists but invalid, check the github page for proper configuration.")
+    loop {
+        let colors = JsonColors::load_from_file(&path, overriden_colors)
+            .unwrap_or_else(|_| JsonColors::load_from_file("/dev/null", true).unwrap());
+
+        if let Some(color) = colors.get_color_by_section(section.as_str()) {
+            return color;
+        }
+
+        path = "/dev/null".to_string();
+    }
 }

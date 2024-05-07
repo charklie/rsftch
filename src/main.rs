@@ -1,5 +1,6 @@
 use colored::Colorize;
 use std::env;
+use std::mem;
 
 mod ascii;
 mod color_config;
@@ -16,6 +17,7 @@ fn main() {
     let mut overriden_ascii: Option<String> = None;
     let mut info_custom_config: Option<String> = None;
     let mut color_custom_config: Option<String> = None;
+    let mut get_only_info: Option<String> = None;
     let mut use_info_custom_config = true;
     let mut use_color_custom_config = true;
     let mut margin: i8 = 1;
@@ -37,16 +39,24 @@ fn main() {
                     return help();
                 }
             }
+            "--info" => {
+                if count + 1 < args.len() && !args[count + 1].starts_with("--") {
+                    get_only_info = Some(mem::take(&mut args[count + 1]));
+                } else {
+                    println!("{} Missing argument for info.\n", "[ERROR]".red());
+                    return help();
+                }
+            }
             "-o" | "--override" => {
-                if count + 1 < args.len() {
-                    overriden_ascii = Some(std::mem::take(&mut args[count + 1]));
+                if count + 1 < args.len() && !args[count + 1].starts_with("--") {
+                    overriden_ascii = Some(mem::take(&mut args[count + 1]));
                 } else {
                     println!("{} Missing argument for override.\n", "[ERROR]".red());
                 }
             }
             "-i" | "--info-config" => {
-                if count + 1 < args.len() {
-                    info_custom_config = Some(std::mem::take(&mut args[count + 1]));
+                if count + 1 < args.len() && !args[count + 1].starts_with("--") {
+                    info_custom_config = Some(mem::take(&mut args[count + 1]));
                 } else {
                     println!(
                         "{} Missing argument for custom info config file.\n",
@@ -55,8 +65,8 @@ fn main() {
                 }
             }
             "-c" | "--color-config" => {
-                if count + 1 < args.len() {
-                    color_custom_config = Some(std::mem::take(&mut args[count + 1]));
+                if count + 1 < args.len() && !args[count + 1].starts_with("--") {
+                    color_custom_config = Some(mem::take(&mut args[count + 1]));
                 } else {
                     println!(
                         "{} Missing argument for custom color config file.\n",
@@ -70,17 +80,21 @@ fn main() {
         };
     }
 
-    info(
-        overriden_ascii,
-        margin,
-        use_info_custom_config,
-        !use_color_custom_config,
-        info_custom_config,
-        color_custom_config,
+    println!(
+        "{}",
+        info(
+            overriden_ascii,
+            margin,
+            use_info_custom_config,
+            !use_color_custom_config,
+            info_custom_config,
+            color_custom_config,
+            get_only_info,
+        )
     );
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 struct InfoItem {
     title: &'static str,
     alignment_space: i8,
@@ -170,7 +184,8 @@ fn info(
     use_custom_color_config: bool,
     custom_info_config_file: Option<String>,
     custom_color_config_file: Option<String>,
-) {
+    get_only_info: Option<String>,
+) -> String {
     let distro = InfoItem {
         title: "distro",
         alignment_space: 2,
@@ -269,6 +284,13 @@ fn info(
         },
     };
 
+    let empty = InfoItem {
+        title: "empty",
+        alignment_space: 0,
+        icon: "",
+        value: String::new(),
+    };
+
     let parse_json_lists = |set| {
         let mut info_set: Vec<InfoItem> = vec![];
         for i in get_info(set, use_custom_info_config, custom_info_config_file.clone()) {
@@ -292,6 +314,33 @@ fn info(
         }
         info_set
     };
+
+    match get_only_info {
+        Some(info) => {
+            return format!(
+                "{}",
+                (match info.as_str() {
+                    "os" | "distro" => &distro,
+                    "host" | "hostname" => &hostname,
+                    "shell" => &shell,
+                    "kernel" => &kernel,
+                    "packs" | "packages" => &packs,
+                    "user" | "username" => &user,
+                    "term" | "terminal" => &term,
+                    "de" | "dewm" | "wm" => &de,
+                    "cpu" | "processor" => &cpu,
+                    "gpu" | "graphics" => &gpu,
+                    "mem" | "memory" => &mem,
+                    "uptime" => &uptime,
+                    "res" | "display" | "resolution" => &res,
+                    _ => &empty,
+                }
+                .value)
+                    .trim_matches('"')
+            );
+        }
+        None => {}
+    }
 
     let info_set1 = parse_json_lists("info1");
     let info_set2 = parse_json_lists("info2");
@@ -328,6 +377,8 @@ fn info(
             custom_color_config_file.clone(),
         );
     }
+
+    String::new()
 }
 
 fn loop_over_data(

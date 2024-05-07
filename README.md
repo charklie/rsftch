@@ -154,6 +154,11 @@ Usage: rsftch [OPTION...] [OVERRIDE] [MARGIN] [CONFIG FILE(s)]
       --ignore-color-config   Ignores the custom color config and uses the default one.
       --ignore-info-config    Ignores the custom info config and uses the default one.
       --ignore-config         Ignores both configs and uses the default ones.
+      --info                  Only prints the value of the following arguments info, for example
+                              "rsftch --info distro" would output: "EndeavourOS"
+
+Info config is located at:  ~/.config/rsftch/info.json
+Color config is located at: ~/.config/rsftch/colors.json
 ```
 ### Time comparison
 - Rsftch: 26.52 milliseconds

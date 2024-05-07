@@ -24,7 +24,11 @@ pub fn help() {
     println!(
         "      --ignore-info-config    Ignores the custom info config and uses the default one."
     );
-    println!("      --ignore-config         Ignores both configs and uses the default ones.\n");
+    println!("      --ignore-config         Ignores both configs and uses the default ones.");
+    println!("      --info                  Only prints the value of the following arguments info, for example");
+    println!(
+        "                              \"rsftch --info distro\" would output: \"EndeavourOS\"\n"
+    );
     println!("Info config is located at:  ~/.config/rsftch/info.json");
     println!("Color config is located at: ~/.config/rsftch/colors.json");
 }

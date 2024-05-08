@@ -163,9 +163,9 @@ Info config is located at:  ~/.config/rsftch/info.json
 Color config is located at: ~/.config/rsftch/colors.json
 ```
 ### Time comparison
-- Rsftch: 26.52 milliseconds
+- Rsftch: 22.93 milliseconds
 - Neofetch: 284.03 milliseconds
-- Screeenfetch: 832.59 milliseconds
+- Screenfetch: 832.59 milliseconds
 
 ###### NOTE: Timing varies heavily depending on e.g. what package manager your distro uses, these times are from my system. (arch + pacman) 
 

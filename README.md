@@ -66,7 +66,7 @@ Or, if you prefer to build it from source:
 cd /usr/pkgsrc/sysutils/rsftch
 make install
 ```
-### Binary
+#### Binary
 If you don't have cargo installed you can download the [binary](https://github.com/charklie/rsftch/releases) and move it directly to your `/usr/bin`, although this is very unsafe and should _never_ be done.
 
 ### Configuration

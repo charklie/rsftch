@@ -180,5 +180,5 @@ Currently Rsftch only works on GNU/Linux, (most) BSD distributions and (probably
 
 ### Thanks
 Thank you to:
-- @siris for helping me with speeding up everything massively.
+- @siris for helping me with speeding up everything massively and packaging rsftch for Funtoo Linux.
 - @0323pin for publishing rsftch on NetBSD as a package. 

@@ -190,8 +190,7 @@ fn info(
         title: "distro",
         alignment_space: 2,
         icon: "",
-        value: get_os_release_pretty_name(overriden_ascii.clone(), "NAME")
-            .expect("Failed getting distro name"),
+        value: get_os_release_pretty_name(overriden_ascii.clone(), "NAME").unwrap_or(uname_s(overriden_ascii.clone())),
     };
 
     let hostname = InfoItem {

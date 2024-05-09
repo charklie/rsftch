@@ -177,6 +177,7 @@ Currently Rsftch only works on GNU/Linux, (most) BSD distributions and (probably
 
 #### Todo
 - [X] Configuration via JSON
+- [ ] Version command
 - [ ] Add TOML / JSONC support
 - [ ] Add support for more info sections (?)
 

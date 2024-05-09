@@ -12,6 +12,8 @@ use crate::color_config::*;
 use crate::fns::*;
 use crate::info_config::*;
 
+const VERSION: Option<&str> = option_env!("CARGO_PKG_VERSION");
+
 fn main() {
     let mut args: Vec<String> = env::args().collect();
     let mut overriden_ascii: Option<String> = None;
@@ -23,8 +25,11 @@ fn main() {
     let mut margin: i8 = 1;
 
     for count in 0..args.len() {
-        match args[count].as_str() {
+        match args[count].to_lowercase().as_str() {
             "-h" | "--help" | "--usage" => return help(),
+            "-v" | "--version" => {
+                return println!("Rsftch {}\nMade by charklie", VERSION.unwrap_or_default())
+            }
             "--ignore-color-config" => use_color_custom_config = false,
             "--ignore-info-config" => use_info_custom_config = false,
             "--ignore-config" => {
@@ -295,53 +300,36 @@ fn info(
         value: String::new(),
     };
 
+    let parse_info = |name: String| {
+        return match name.to_lowercase().as_str() {
+            "os" | "distro" => &distro,
+            "host" | "hostname" => &hostname,
+            "shell" => &shell,
+            "kernel" => &kernel,
+            "packs" | "packages" => &packs,
+            "user" | "username" => &user,
+            "term" | "terminal" => &term,
+            "de" | "dewm" | "wm" => &de,
+            "cpu" | "processor" => &cpu,
+            "gpu" | "graphics" => &gpu,
+            "mem" | "memory" => &mem,
+            "uptime" => &uptime,
+            "res" | "display" | "resolution" => &res,
+            _ => &empty,
+        };
+    };
+
     let parse_json_lists = |set| {
         let mut info_set: Vec<InfoItem> = vec![];
         for i in get_info(set, use_custom_info_config, custom_info_config_file.clone()) {
-            let info = match i.to_ascii_lowercase().as_str() {
-                "os" | "distro" => &distro,
-                "host" | "hostname" => &hostname,
-                "shell" => &shell,
-                "kernel" => &kernel,
-                "packs" | "packages" => &packs,
-                "user" | "username" => &user,
-                "term" | "terminal" => &term,
-                "de" | "dewm" | "wm" => &de,
-                "cpu" | "processor" => &cpu,
-                "gpu" | "graphics" => &gpu,
-                "mem" | "memory" => &mem,
-                "uptime" => &uptime,
-                "res" | "display" | "resolution" => &res,
-                _ => &distro,
-            };
-            info_set.push(info.clone());
+            info_set.push(parse_info(i).clone());
         }
         info_set
     };
 
     match get_only_info {
         Some(info) => {
-            return format!(
-                "{}",
-                (match info.as_str() {
-                    "os" | "distro" => &distro,
-                    "host" | "hostname" => &hostname,
-                    "shell" => &shell,
-                    "kernel" => &kernel,
-                    "packs" | "packages" => &packs,
-                    "user" | "username" => &user,
-                    "term" | "terminal" => &term,
-                    "de" | "dewm" | "wm" => &de,
-                    "cpu" | "processor" => &cpu,
-                    "gpu" | "graphics" => &gpu,
-                    "mem" | "memory" => &mem,
-                    "uptime" => &uptime,
-                    "res" | "display" | "resolution" => &res,
-                    _ => &empty,
-                }
-                .value)
-                    .trim_matches('"')
-            );
+            return format!("{}", parse_info(info).value.trim_matches('"'));
         }
         None => {}
     }

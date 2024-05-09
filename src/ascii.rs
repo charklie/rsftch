@@ -44,6 +44,7 @@ pub fn ascii_test() {
         "CachyOS",
         "NetBSD",
         "FreeBSD",
+        "Unknown distro"
     ];
 
     for i in distros {
@@ -81,5 +82,5 @@ pub fn get_distro_ascii(overriden_ascii: Option<String>) -> String {
         }
     }
 
-    "   ___      _____      __ \n  / _ \\___ / _/ /_____/ / \n / , _(_-</ _/ __/ __/ _ \\n/_/|_/___/_/ \\__/\\__/_//_/".to_string()
+    "   ___      _____      __ \n  / _ \\___ / _/ /_____/ / \n / , _(_-</ _/ __/ __/ _ \\\n/_/|_/___/_/ \\__/\\__/_//_/".to_string()
 }

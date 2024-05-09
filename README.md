@@ -175,13 +175,18 @@ Currently Rsftch only works on GNU/Linux, (most) BSD distributions and (probably
 ### Note
 (If) You're wondering why I didn't use clap for command-line argument parsing, I've personally found it slow, and if I do get it to be somewhat fast, its too easy and first rsftch was meant to be a project for me to learn rust so I tried to complicate (some) things and making them in pure rust instead of using a crate to do it for me.
 
-#### Todo
-- [X] Configuration via JSON
-- [ ] Version command
-- [ ] Add TOML / JSONC support
-- [ ] Add support for more info sections (?)
+### Contribrutions
+All PRs or just an issue recommending an issue is always welcome. Keep in mind that I've only been programming in Rust for circa 2 months, so don't be harsh. 
 
 ### Thanks
 Thank you to:
-- @siris for helping me with speeding up everything massively and packaging rsftch for Funtoo Linux.
-- @0323pin for publishing rsftch on NetBSD as a package. 
+- [@siris](https://www.github.com/siris) for helping me with speeding up everything massively and packaging rsftch for Funtoo Linux.
+- [@0323pin](https://www.github.com/0323pin) for packaging rsftch on pkgsrc and uploading it to [beucismis/awesome-fetch](https://github.com/beucismis/awesome-fetch).
+
+### Todo
+- [X] Configuration via JSON
+- [X] Version command
+- [ ] Automatic ASCII generation 
+- [ ] Add TOML / JSONC support
+- [ ] Add support for more info sections (?)
+

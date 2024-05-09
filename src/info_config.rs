@@ -38,7 +38,7 @@ fn get_default_info_lists(section: &str) -> Vec<String> {
         "info1" => vec!["os", "host", "shell", "kernel", "packs"],
         "info2" => vec!["user", "term", "de"],
         "info3" => vec!["cpu", "gpu", "mem", "uptime", "res"],
-        _ => vec!["os"],
+        _ => vec!["empty"],
     }
     .iter()
     .map(|s| s.to_string())

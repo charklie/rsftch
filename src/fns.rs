@@ -10,25 +10,18 @@ use std::{
 };
 
 pub fn help() {
-    println!("Usage: rsftch [OPTION...] [OVERRIDE] [MARGIN] [CONFIG FILE(s)]\n");
+    println!("Usage: rsftch [OPTION...] [OVERRIDE] [MARGIN] [CONFIG FILE(s)] [INFO]\n");
     println!("  -h, --help, --usage         Bring up this menu");
-    println!(
-        "  -o, --override              Overrides distribution, affects ASCII and \"distro\" info."
-    );
+    println!("  -o, --override              Overrides distribution, affects ASCII and \"distro\" info. Running without");
+    println!("                              an argument prints all possible options");
     println!("  -m, --margin                Add margin to the info sections, default 1.");
     println!("  -c, --color-config          Specify another color config file, to be used instead of the default one.");
     println!("  -i, --info-config           Specify another info config file, to be used instead of the default one.");
-    println!(
-        "      --ignore-color-config   Ignores the custom color config and uses the default one."
-    );
-    println!(
-        "      --ignore-info-config    Ignores the custom info config and uses the default one."
-    );
+    println!("      --ignore-color-config   Ignores the custom color config and uses the default one.");
+    println!("      --ignore-info-config    Ignores the custom info config and uses the default one.");
     println!("      --ignore-config         Ignores both configs and uses the default ones.");
     println!("      --info                  Only prints the value of the following arguments info, for example");
-    println!(
-        "                              \"rsftch --info distro\" would output: \"EndeavourOS\"\n"
-    );
+    println!("                              \"rsftch --info distro\" would output: \"EndeavourOS\"\n");
     println!("Info config is located at:  ~/.config/rsftch/info.json");
     println!("Color config is located at: ~/.config/rsftch/colors.json");
 }

@@ -35,7 +35,7 @@ fn main() {
                 if count + 1 < args.len() {
                     margin = args[count + 1].parse().unwrap();
                 } else {
-                    println!("{} Missing argument for margin.\n", "[ERROR]".red());
+                    println!("[{}] Missing argument for margin.\n", "ERROR".red());
                     return help();
                 }
             }
@@ -43,7 +43,7 @@ fn main() {
                 if count + 1 < args.len() && !args[count + 1].starts_with("--") {
                     get_only_info = Some(mem::take(&mut args[count + 1]));
                 } else {
-                    println!("{} Missing argument for info.\n", "[ERROR]".red());
+                    println!("[{}] Missing argument for info.\n", "ERROR".red());
                     return help();
                 }
             }
@@ -51,7 +51,11 @@ fn main() {
                 if count + 1 < args.len() && !args[count + 1].starts_with("--") {
                     overriden_ascii = Some(mem::take(&mut args[count + 1]));
                 } else {
-                    println!("{} Missing argument for override.\n", "[ERROR]".red());
+                    println!(
+                        "[{}] Missing argument for override, showing all possible.",
+                        "WARNING".yellow()
+                    );
+                    return ascii_test();
                 }
             }
             "-i" | "--info-config" => {
@@ -59,9 +63,10 @@ fn main() {
                     info_custom_config = Some(mem::take(&mut args[count + 1]));
                 } else {
                     println!(
-                        "{} Missing argument for custom info config file.\n",
-                        "[ERROR]".red()
+                        "[{}] Missing argument for custom info config file.\n",
+                        "ERROR".red()
                     );
+                    return help();
                 }
             }
             "-c" | "--color-config" => {
@@ -69,14 +74,13 @@ fn main() {
                     color_custom_config = Some(mem::take(&mut args[count + 1]));
                 } else {
                     println!(
-                        "{} Missing argument for custom color config file.\n",
-                        "[ERROR]".red()
+                        "[{}] Missing argument for custom color config file.\n",
+                        "ERROR".red()
                     );
+                    return help();
                 }
             }
-            _ => {
-                continue;
-            }
+            _ => {}
         };
     }
 
@@ -190,7 +194,8 @@ fn info(
         title: "distro",
         alignment_space: 2,
         icon: "",
-        value: get_os_release_pretty_name(overriden_ascii.clone(), "NAME").unwrap_or(uname_s(overriden_ascii.clone())),
+        value: get_os_release_pretty_name(overriden_ascii.clone(), "NAME")
+            .unwrap_or(uname_s(overriden_ascii.clone())),
     };
 
     let hostname = InfoItem {
@@ -259,7 +264,7 @@ fn info(
     let res = InfoItem {
         title: "res",
         alignment_space: 5,
-        icon: "",
+        icon: "",
         value: get_res(),
     };
 

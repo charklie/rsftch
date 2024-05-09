@@ -259,7 +259,7 @@ fn info(
     let res = InfoItem {
         title: "res",
         alignment_space: 5,
-        icon: "",
+        icon: "",
         value: get_res(),
     };
 

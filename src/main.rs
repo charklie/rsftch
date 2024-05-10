@@ -269,7 +269,7 @@ fn info(
     let res = InfoItem {
         title: "res",
         alignment_space: 5,
-        icon: "",
+        icon: "",
         value: get_res(),
     };
 
@@ -381,23 +381,22 @@ fn loop_over_data(
     custom_color_config_file: Option<String>,
 ) {
     list.retain(|s| !s.value.is_empty());
-    let last = list.len();
+    let len = list.len();
 
-    for (idx, item) in list.iter_mut().enumerate() {
-        let connector: &'static str;
+    for (idx, item) in list.clone().iter().enumerate() {
         let color = get_color_config(
             format!("color{}", section),
             use_custom_config,
             custom_color_config_file.clone(),
         );
 
-        if idx == 0 {
-            connector = "╭─";
-        } else if idx == last - 1 {
-            connector = "╰─";
+        let connector = if idx == 0 {
+            "╭─"
+        } else if idx == len - 1{
+            "╰─"
         } else {
-            connector = "├─";
-        }
+            "├─"
+        };
 
         println!("{}{}", margin, print_data(item, color, connector));
     }

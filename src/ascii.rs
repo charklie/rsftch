@@ -44,7 +44,7 @@ pub fn ascii_test() {
         "CachyOS",
         "NetBSD",
         "FreeBSD",
-        "Unknown distro"
+        "Unknown distro",
     ];
 
     for i in distros {

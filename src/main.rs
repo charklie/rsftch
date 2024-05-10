@@ -45,7 +45,7 @@ fn main() {
                 }
             }
             "--info" => {
-                if count + 1 < args.len() && !args[count + 1].starts_with("--") {
+                if count + 1 < args.len() && !args[count + 1].starts_with("-") {
                     get_only_info = Some(mem::take(&mut args[count + 1]));
                 } else {
                     println!("[{}] Missing argument for info.\n", "ERROR".red());
@@ -53,7 +53,7 @@ fn main() {
                 }
             }
             "-o" | "--override" => {
-                if count + 1 < args.len() && !args[count + 1].starts_with("--") {
+                if count + 1 < args.len() && !args[count + 1].starts_with("-") {
                     overriden_ascii = Some(mem::take(&mut args[count + 1]));
                 } else {
                     println!(
@@ -64,7 +64,7 @@ fn main() {
                 }
             }
             "-i" | "--info-config" => {
-                if count + 1 < args.len() && !args[count + 1].starts_with("--") {
+                if count + 1 < args.len() && !args[count + 1].starts_with("-") {
                     info_custom_config = Some(mem::take(&mut args[count + 1]));
                 } else {
                     println!(
@@ -75,7 +75,7 @@ fn main() {
                 }
             }
             "-c" | "--color-config" => {
-                if count + 1 < args.len() && !args[count + 1].starts_with("--") {
+                if count + 1 < args.len() && !args[count + 1].starts_with("-") {
                     color_custom_config = Some(mem::take(&mut args[count + 1]));
                 } else {
                     println!(

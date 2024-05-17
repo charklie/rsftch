@@ -36,7 +36,7 @@ fn read_info_from_json(
 fn get_default_info_lists(section: &str) -> Vec<String> {
     match section {
         "info1" => vec!["os", "host", "shell", "kernel", "packs"],
-        "info2" => vec!["user", "term", "de"],
+        "info2" => vec!["user", "term", "de", "time", "disk"],
         "info3" => vec!["cpu", "gpu", "mem", "uptime", "res"],
         _ => vec!["empty"],
     }

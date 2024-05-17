@@ -180,7 +180,7 @@ fn print_data(infos: &InfoItem, color: Color, connector: &'static str) -> String
     let alignment_space = " ".repeat(infos.alignment_space as usize);
 
     format!(
-        "{}{}  {}{}{}  {}",
+        "{}{}  {}{} {}  {}",
         coloreds.0, coloreds.1, infos.title, alignment_space, coloreds.2, infos.value
     )
     .to_string()
@@ -293,6 +293,20 @@ fn info(
         },
     };
 
+    let disk = InfoItem {
+        title: "disk",
+        alignment_space: 4,
+        icon: "",
+        value: get_disk_usage(),
+    };
+
+    let timezone = InfoItem {
+        title: "timezone",
+        alignment_space: 0,
+        icon: "󰥔",
+        value: get_timezone(),
+    };
+
     let empty = InfoItem {
         title: "empty",
         alignment_space: 0,
@@ -315,6 +329,8 @@ fn info(
             "mem" | "memory" => &mem,
             "uptime" => &uptime,
             "res" | "display" | "resolution" => &res,
+            "time" | "timezone" => &timezone,
+            "disk" | "diskusage" => &disk,
             _ => &empty,
         };
     };
@@ -392,7 +408,7 @@ fn loop_over_data(
 
         let connector = if idx == 0 {
             "╭─"
-        } else if idx == len - 1{
+        } else if idx == len - 1 {
             "╰─"
         } else {
             "├─"

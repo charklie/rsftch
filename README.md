@@ -79,7 +79,7 @@ The info configuration should be located at `~/.config/rsftch/info.json`, and it
 ```json
 {
     "info1": [ "os", "kernel", "packs" ],
-    "info2": [ "user", "host" ],
+    "info2": [ "user", "host", "de" ],
     "info3": [ "cpu", "gpu", "mem" ]
 }
 ```
@@ -98,6 +98,8 @@ This is a very simple example but all the options are as follows:
 - mem / memory
 - uptime
 - res / display / resolution
+- time / timezone
+- disk / diskusage
 
 #### Colors
 The color configuration should be located at `~/.config/rsftch/colors.json`, and it could look something like this:
@@ -150,18 +152,20 @@ File an issue.
 
 ### Usage
 ```
-Usage: rsftch [OPTION...] [OVERRIDE] [MARGIN] [CONFIG FILE(s)]
+Usage: rsftch [OPTION...] [OVERRIDE] [MARGIN] [CONFIG FILE(s)] [INFO]
 
-  -h, --help, --usage         Bring up this menu
-  -o, --override              Overrides distribution, affects ASCII and "distro" info.
-  -m, --margin                Add margin to the info sections, default 1.
-  -c, --color-config          Specify another color config file, to be used instead of the default one.
-  -i, --info-config           Specify another info config file, to be used instead of the default one.
-      --ignore-color-config   Ignores the custom color config and uses the default one.
-      --ignore-info-config    Ignores the custom info config and uses the default one.
-      --ignore-config         Ignores both configs and uses the default ones.
-      --info                  Only prints the value of the following arguments info, for example
-                              "rsftch --info distro" would output: "EndeavourOS"
+      -h, --help, --usage         Bring up this menu.
+      -v, --version               Print version number.
+      -o, --override              Overrides distribution, affects ASCII and "distro" info. Running without
+                                  an argument prints all possible options.
+      -m, --margin                Add margin to the info sections, default 1.
+      -c, --color-config          Specify another color config file, to be used instead of the default one.
+      -i, --info-config           Specify another info config file, to be used instead of the default one.
+          --ignore-color-config   Ignores the custom color config and uses the default one.
+          --ignore-info-config    Ignores the custom info config and uses the default one.
+          --ignore-config         Ignores both configs and uses the default ones.
+          --info                  Only prints the value of the following arguments info, for example
+                                  `rsftch --info distro` would output: "EndeavourOS".
 
 Info config is located at:  ~/.config/rsftch/info.json
 Color config is located at: ~/.config/rsftch/colors.json
@@ -176,11 +180,8 @@ Color config is located at: ~/.config/rsftch/colors.json
 ### Compatability
 Currently Rsftch only works on GNU/Linux, (most) BSD distributions and (probably) Mac OS.
 
-### Note
-(If) You're wondering why I didn't use clap for command-line argument parsing, I've personally found it slow, and if I do get it to be somewhat fast, its too easy and first rsftch was meant to be a project for me to learn rust so I tried to complicate (some) things and making them in pure rust instead of using a crate to do it for me.
-
 ### Contribrutions
-All PRs or just an issue recommending an issue is always welcome. Keep in mind that I've only been programming in Rust for circa 2 months, so don't be harsh. 
+All PRs or just an issue recommending an enhancement is always welcome. 
 
 ### Thanks
 Thank you to:
@@ -190,6 +191,7 @@ Thank you to:
 ### Todo
 - [X] Configuration via JSON
 - [X] Version command
+- [ ] Optimizations (?)
 - [ ] Automatic ASCII generation 
 - [ ] Add TOML / JSONC support
 - [ ] Add support for more info sections (?)

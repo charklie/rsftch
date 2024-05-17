@@ -4,37 +4,38 @@ use std::{
     env,
     fs::{self, read_to_string, File},
     io::{BufRead, BufReader, Error, Read},
+    path::Path,
     process::{Command, Stdio},
     sync::{Arc, Mutex},
     time::Duration,
 };
 
 pub fn help() {
-    println!("Usage: rsftch [OPTION...] [OVERRIDE] [MARGIN] [CONFIG FILE(s)] [INFO]\n");
-    println!("  -h, --help, --usage         Bring up this menu.");
-    println!("  -v, --version               Print version number.");
-    println!("  -o, --override              Overrides distribution, affects ASCII and \"distro\" info. Running without");
-    println!("                              an argument prints all possible options.");
-    println!("  -m, --margin                Add margin to the info sections, default 1.");
-    println!("  -c, --color-config          Specify another color config file, to be used instead of the default one.");
-    println!("  -i, --info-config           Specify another info config file, to be used instead of the default one.");
     println!(
-        "      --ignore-color-config   Ignores the custom color config and uses the default one."
+        r#"Usage: rsftch [OPTION...] [OVERRIDE] [MARGIN] [CONFIG FILE(s)] [INFO]
+        
+      -h, --help, --usage         Bring up this menu.
+      -v, --version               Print version number.
+      -o, --override              Overrides distribution, affects ASCII and "distro" info. Running without
+                                  an argument prints all possible options.
+      -m, --margin                Add margin to the info sections, default 1.
+      -c, --color-config          Specify another color config file, to be used instead of the default one.
+      -i, --info-config           Specify another info config file, to be used instead of the default one.
+          --ignore-color-config   Ignores the custom color config and uses the default one.
+          --ignore-info-config    Ignores the custom info config and uses the default one.
+          --ignore-config         Ignores both configs and uses the default ones.
+          --info                  Only prints the value of the following arguments info, for example
+                                  `rsftch --info distro` would output: "EndeavourOS".
+
+    Info config is located at:  ~/.config/rsftch/info.json
+    Color config is located at: ~/.config/rsftch/colors.json"#
     );
-    println!(
-        "      --ignore-info-config    Ignores the custom info config and uses the default one."
-    );
-    println!("      --ignore-config         Ignores both configs and uses the default ones.");
-    println!("      --info                  Only prints the value of the following arguments info, for example");
-    println!(
-        "                              \"rsftch --info distro\" would output: \"EndeavourOS\".\n"
-    );
-    println!("Info config is located at:  ~/.config/rsftch/info.json");
-    println!("Color config is located at: ~/.config/rsftch/colors.json");
 }
 
 pub fn whoami() -> String {
-    let output = Command::new("whoami").output().expect("whoami failed");
+    let output = Command::new("whoami")
+        .output()
+        .expect("`whoami` failed, are you on a Unix-like operating system?");
     String::from_utf8_lossy(&output.stdout).trim().to_string()
 }
 
@@ -42,14 +43,203 @@ pub fn home_dir() -> &'static str {
     if let Some(home) = option_env!("HOME") {
         return home;
     } else {
-        eprintln!("Couldn't find home directory, are you on a Unix-like operating system? \nIf you are, use the \"--no-config\" flag, or the \"--config\" flag and set \nan other file to act as the config file. ");
+        eprintln!("Couldn't find home directory, are you on a Unix-like operating system? \nIf you are, use the \"--ignore-config\" flag, or the \"--(info/color)-config\" flag and set \nan other file to act as the config file.");
         return "";
     }
 }
 
+pub fn get_timezone() -> String {
+    let timezone_path = Path::new("/etc/timezone");
+    if timezone_path.exists() {
+        if let Ok(timezone) = fs::read_to_string(timezone_path) {
+            return timezone.trim().to_string();
+        }
+    }
+
+    let localtime_path = Path::new("/etc/localtime");
+    if localtime_path.exists() {
+        if let Ok(symlink_target) = fs::read_link(localtime_path) {
+            if let Some(target_str) = symlink_target.to_str() {
+                if target_str.contains("/zoneinfo/") {
+                    if let Some(tz) = target_str.split("/zoneinfo/").last() {
+                        return tz.to_string();
+                    }
+                }
+            }
+        }
+    }
+
+    String::new()
+}
+
+pub fn get_cpu_temp() -> String {
+    // Try to read temperature on Linux from /sys/class/thermal/thermal_zone*/temp
+    let sys_thermal_path = Path::new("/sys/class/thermal/");
+    if sys_thermal_path.exists() {
+        if let Ok(entries) = fs::read_dir(sys_thermal_path) {
+            let temps: Vec<String> = entries
+                .par_bridge()
+                .filter_map(|entry| {
+                    let entry = entry.ok()?;
+                    let path = entry.path();
+                    if path.is_dir() && path.to_str()?.contains("thermal_zone") {
+                        let temp_path = path.join("temp");
+                        if let Ok(temp_str) = fs::read_to_string(temp_path) {
+                            if let Ok(temp) = temp_str.trim().parse::<f64>() {
+                                return Some(format!("{:.1}°C", temp / 1000.0));
+                            }
+                        }
+                    }
+                    None
+                })
+                .collect();
+            if !temps.is_empty() {
+                return temps[0].clone();
+            }
+        }
+    }
+
+    let acpi_thermal_path = Path::new("/proc/acpi/thermal_zone/");
+    if acpi_thermal_path.exists() {
+        if let Ok(entries) = fs::read_dir(acpi_thermal_path) {
+            let temps: Vec<String> = entries
+                .par_bridge()
+                .filter_map(|entry| {
+                    let entry = entry.ok()?;
+                    let temp_path = entry.path().join("temperature");
+                    if let Ok(file) = File::open(temp_path) {
+                        let reader = BufReader::new(file);
+                        for line in reader.lines() {
+                            if let Ok(line) = line {
+                                if let Some(temp_str) = line.split(':').nth(1) {
+                                    if let Ok(temp) =
+                                        temp_str.trim().split_whitespace().next()?.parse::<f64>()
+                                    {
+                                        return Some(format!("{:.1}°C", temp));
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    None
+                })
+                .collect();
+            if !temps.is_empty() {
+                return temps[0].clone();
+            }
+        }
+    }
+
+    #[cfg(target_os = "netbsd")]
+    {
+        if let Ok(file) = fs::File::open("/var/run/dmesg.boot") {
+            let reader = io::BufReader::new(file);
+            for line in reader.lines() {
+                if let Ok(line) = line {
+                    if line.contains("temperature sensor") {
+                        if let Some(temp_str) = line.split(':').nth(1) {
+                            if let Ok(temp) =
+                                temp_str.trim().split_whitespace().next()?.parse::<f64>()
+                            {
+                                return format!("{:.1}°C", temp);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        if let Ok(output) = std::process::Command::new("sysctl")
+            .arg("hw.sensors.cpu0.temp0")
+            .output()
+        {
+            if output.status.success() {
+                let output_str = String::from_utf8_lossy(&output.stdout);
+                if let Some(temp_str) = output_str.split('=').nth(1) {
+                    if let Ok(temp) = temp_str.trim().split_whitespace().next()?.parse::<f64>() {
+                        return format!("{:.1}°C", temp);
+                    }
+                }
+            }
+        }
+    }
+
+    // Return an empty string if temperature could not be determined
+    String::new()
+}
+
+pub fn get_disk_usage() -> String {
+    let output_str = match Command::new("df").arg("-h").output() {
+        Ok(output) if output.status.success() => {
+            String::from_utf8(output.stdout).unwrap_or_default()
+        }
+        _ => return String::new(),
+    };
+
+    let line = output_str.lines().find(|line| line.starts_with('/'));
+
+    if let Some(line) = line {
+        let parts: Vec<_> = line.split_whitespace().collect();
+        if parts.len() >= 5 {
+            let filesystem = parts[0];
+            let used = parts[2];
+            let size = parts[1];
+            let capacity = parts[4];
+            return format!("({}) {} / {} ({})", filesystem, used, size, capacity);
+        }
+    }
+
+    String::new()
+}
+
+pub fn get_gpu_temp() -> String {
+    if let Ok(output) = Command::new("nvidia-smi")
+        .args(&["--query-gpu=temperature.gpu", "--format=csv,noheader"])
+        .output()
+    {
+        if output.status.success() {
+            if let Ok(temp_str) = String::from_utf8(output.stdout) {
+                if let Ok(temp) = temp_str.trim().parse::<f64>() {
+                    return format!("{:.1}°C", temp);
+                }
+            }
+        }
+    }
+
+    if let Ok(entries) = fs::read_dir("/sys/class/drm/") {
+        let temps: Vec<_> = entries
+            .par_bridge()
+            .filter_map(|entry| {
+                let path = entry.ok()?.path();
+                let temp_path = path.join("device/hwmon/hwmon0/temp1_input");
+                fs::read_to_string(temp_path)
+                    .ok()
+                    .and_then(|temp_str| temp_str.trim().parse::<f64>().ok())
+                    .map(|temp| format!("{:.1}°C", temp / 1000.0))
+            })
+            .collect();
+        if let Some(temp) = temps.get(0) {
+            return temp.clone();
+        }
+    }
+
+    #[cfg(target_os = "netbsd")]
+    if let Ok(output) = Command::new("sysctl").arg("hw.sensors.gpu0.temp0").output() {
+        if output.status.success() {
+            let output_str = String::from_utf8_lossy(&output.stdout);
+            if let Some(temp_str) = output_str.split('=').nth(1) {
+                if let Ok(temp) = temp_str.trim().split_whitespace().next()?.parse::<f64>() {
+                    return format!("{:.1}°C", temp);
+                }
+            }
+        }
+    }
+
+    String::new()
+}
+
 pub fn get_cpu_info() -> String {
     let cpuinfo = read_to_string("/proc/cpuinfo").expect("Failed to read /proc/cpuinfo");
-    let mut cpu_info = String::new();
     let mut cpu = String::new();
 
     for line in cpuinfo.lines() {
@@ -65,8 +255,12 @@ pub fn get_cpu_info() -> String {
             }
         }
     }
-    cpu_info.push_str(&cpu);
-    cpu_info
+
+    format!(
+        "{}({})",
+        &cpu.split('@').next().unwrap_or_default(),
+        get_cpu_temp()
+    )
 }
 
 fn get_package_managers() -> Vec<&'static str> {
@@ -415,7 +609,7 @@ pub fn get_packages() -> String {
         }
     });
 
-    let total_packages: i16 = packs_numbers.lock().unwrap().iter().sum();
+    let total_packages: i16 = packs_numbers.lock().unwrap().par_iter().sum();
     total_packages.to_string()
 }
 
@@ -472,7 +666,12 @@ pub fn get_gpu_info() -> Result<String, Error> {
                 "GPU name not found",
             ))? + start_index;
             let gpu_name = &line[start_index..end_index];
-            return Ok(format!("{} {}", prefix, gpu_name.trim()));
+            return Ok(format!(
+                "{} {} ({})",
+                prefix,
+                gpu_name.trim(),
+                get_gpu_temp()
+            ));
         }
     }
 

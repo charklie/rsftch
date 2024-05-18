@@ -73,100 +73,76 @@ pub fn get_timezone() -> String {
 }
 
 pub fn get_cpu_temp() -> String {
-    // Try to read temperature on Linux from /sys/class/thermal/thermal_zone*/temp
-    let sys_thermal_path = Path::new("/sys/class/thermal/");
-    if sys_thermal_path.exists() {
-        if let Ok(entries) = fs::read_dir(sys_thermal_path) {
-            let temps: Vec<String> = entries
-                .par_bridge()
-                .filter_map(|entry| {
-                    let entry = entry.ok()?;
-                    let path = entry.path();
-                    if path.is_dir() && path.to_str()?.contains("thermal_zone") {
-                        let temp_path = path.join("temp");
-                        if let Ok(temp_str) = fs::read_to_string(temp_path) {
-                            if let Ok(temp) = temp_str.trim().parse::<f64>() {
-                                return Some(format!("{:.1}°C", temp / 1000.0));
-                            }
-                        }
-                    }
-                    None
-                })
-                .collect();
-            if !temps.is_empty() {
-                return temps[0].clone();
-            }
-        }
-    }
-
-    let acpi_thermal_path = Path::new("/proc/acpi/thermal_zone/");
-    if acpi_thermal_path.exists() {
-        if let Ok(entries) = fs::read_dir(acpi_thermal_path) {
-            let temps: Vec<String> = entries
-                .par_bridge()
-                .filter_map(|entry| {
-                    let entry = entry.ok()?;
-                    let temp_path = entry.path().join("temperature");
-                    if let Ok(file) = File::open(temp_path) {
-                        let reader = BufReader::new(file);
-                        for line in reader.lines() {
-                            if let Ok(line) = line {
-                                if let Some(temp_str) = line.split(':').nth(1) {
-                                    if let Ok(temp) =
-                                        temp_str.trim().split_whitespace().next()?.parse::<f64>()
-                                    {
-                                        return Some(format!("{:.1}°C", temp));
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    None
-                })
-                .collect();
-            if !temps.is_empty() {
-                return temps[0].clone();
-            }
-        }
+    #[cfg(target_os = "linux")]
+    {
+        fs::read_to_string("/sys/class/thermal/thermal_zone0/temp")
+            .ok()
+            .and_then(|temp_str| temp_str.trim().parse::<f64>().ok())
+            .map(|temp| format!("{:.1}°C", temp / 1000.0))
+            .unwrap_or_default()
     }
 
     #[cfg(target_os = "netbsd")]
     {
-        if let Ok(file) = fs::File::open("/var/run/dmesg.boot") {
-            let reader = io::BufReader::new(file);
-            for line in reader.lines() {
-                if let Ok(line) = line {
-                    if line.contains("temperature sensor") {
-                        if let Some(temp_str) = line.split(':').nth(1) {
-                            if let Ok(temp) =
-                                temp_str.trim().split_whitespace().next()?.parse::<f64>()
-                            {
-                                return format!("{:.1}°C", temp);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        if let Ok(output) = std::process::Command::new("sysctl")
-            .arg("hw.sensors.cpu0.temp0")
+        Command::new("envstat")
+            .arg("-d")
             .output()
-        {
-            if output.status.success() {
-                let output_str = String::from_utf8_lossy(&output.stdout);
-                if let Some(temp_str) = output_str.split('=').nth(1) {
-                    if let Ok(temp) = temp_str.trim().split_whitespace().next()?.parse::<f64>() {
-                        return format!("{:.1}°C", temp);
-                    }
-                }
-            }
-        }
+            .ok()
+            .and_then(|output| String::from_utf8(output.stdout).ok())
+            .and_then(|output_str| {
+                output_str.lines().find(|line| line.contains("cpu0 temperature"))
+                    .and_then(|line| line.split_whitespace().nth(2))
+                    .and_then(|temp_str| temp_str.parse::<f64>().ok())
+                    .map(|temp| format!("{:.1}°C", temp))
+            })
+            .unwrap_or_default()
+    }
+}
+
+fn get_gpu_temp() -> String {
+    #[cfg(target_os = "linux")]
+    {
+        Command::new("nvidia-smi")
+            .arg("--query-gpu=temperature.gpu")
+            .arg("--format=csv,noheader")
+            .output()
+            .ok()
+            .and_then(|output| String::from_utf8(output.stdout).ok())
+            .and_then(|temp_str| temp_str.lines().next().and_then(|s| s.trim().parse::<f64>().ok()))
+            .map(|temp| format!("{:.1}°C", temp))
+            .unwrap_or_else(|| {
+                Command::new("sensors")
+                    .output()
+                    .ok()
+                    .and_then(|output| String::from_utf8(output.stdout).ok())
+                    .and_then(|output_str| {
+                        output_str.lines()
+                            .find(|line| line.contains("temp1:") || line.contains("edge:") || line.contains("junction:") || line.contains("mem:"))
+                            .and_then(|line| line.split_whitespace().nth(1))
+                            .and_then(|temp_str| temp_str.trim_end_matches("°C").parse::<f64>().ok())
+                            .map(|temp| format!("{:.1}°C", temp))
+                    })
+                    .unwrap_or_default()
+            })
     }
 
-    // Return an empty string if temperature could not be determined
-    String::new()
+    #[cfg(target_os = "netbsd")]
+    {
+        Command::new("envstat")
+            .arg("-d")
+            .output()
+            .ok()
+            .and_then(|output| String::from_utf8(output.stdout).ok())
+            .and_then(|output_str| {
+                output_str.lines().find(|line| line.contains("gpu0 temperature"))
+                    .and_then(|line| line.split_whitespace().nth(2))
+                    .and_then(|temp_str| temp_str.parse::<f64>().ok())
+                    .map(|temp| format!("{:.1}°C", temp))
+            })
+            .unwrap_or_default()
+    }
 }
+
 
 pub fn get_disk_usage() -> String {
     let output_str = match Command::new("df").arg("-h").output() {
@@ -186,52 +162,6 @@ pub fn get_disk_usage() -> String {
             let size = parts[1];
             let capacity = parts[4];
             return format!("({}) {} / {} ({})", filesystem, used, size, capacity);
-        }
-    }
-
-    String::new()
-}
-
-pub fn get_gpu_temp() -> String {
-    if let Ok(output) = Command::new("nvidia-smi")
-        .args(&["--query-gpu=temperature.gpu", "--format=csv,noheader"])
-        .output()
-    {
-        if output.status.success() {
-            if let Ok(temp_str) = String::from_utf8(output.stdout) {
-                if let Ok(temp) = temp_str.trim().parse::<f64>() {
-                    return format!("{:.1}°C", temp);
-                }
-            }
-        }
-    }
-
-    if let Ok(entries) = fs::read_dir("/sys/class/drm/") {
-        let temps: Vec<_> = entries
-            .par_bridge()
-            .filter_map(|entry| {
-                let path = entry.ok()?.path();
-                let temp_path = path.join("device/hwmon/hwmon0/temp1_input");
-                fs::read_to_string(temp_path)
-                    .ok()
-                    .and_then(|temp_str| temp_str.trim().parse::<f64>().ok())
-                    .map(|temp| format!("{:.1}°C", temp / 1000.0))
-            })
-            .collect();
-        if let Some(temp) = temps.get(0) {
-            return temp.clone();
-        }
-    }
-
-    #[cfg(target_os = "netbsd")]
-    if let Ok(output) = Command::new("sysctl").arg("hw.sensors.gpu0.temp0").output() {
-        if output.status.success() {
-            let output_str = String::from_utf8_lossy(&output.stdout);
-            if let Some(temp_str) = output_str.split('=').nth(1) {
-                if let Ok(temp) = temp_str.trim().split_whitespace().next()?.parse::<f64>() {
-                    return format!("{:.1}°C", temp);
-                }
-            }
         }
     }
 

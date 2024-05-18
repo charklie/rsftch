@@ -86,12 +86,13 @@ pub fn get_cpu_temp() -> String {
     {
         Command::new("envstat")
             .arg("-d")
+            .arg("acpitz0")
             .output()
             .ok()
             .and_then(|output| String::from_utf8(output.stdout).ok())
             .and_then(|output_str| {
-                output_str.lines().find(|line| line.contains("cpu0 temperature"))
-                    .and_then(|line| line.split_whitespace().nth(2))
+                output_str.lines().next()
+                    .and_then(|line| line.split_whitespace().nth(1))
                     .and_then(|temp_str| temp_str.parse::<f64>().ok())
                     .map(|temp| format!("{:.1}°C", temp))
             })

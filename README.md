@@ -191,6 +191,7 @@ Thank you to:
 ### Todo
 - [X] Configuration via JSON
 - [X] Version command
+- [ ] Rewrite memory function
 - [ ] Optimizations (?)
 - [ ] Automatic ASCII generation 
 - [ ] Add TOML / JSONC support

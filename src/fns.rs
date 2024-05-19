@@ -78,23 +78,25 @@ pub fn get_cpu_temp() -> String {
         fs::read_to_string("/sys/class/thermal/thermal_zone0/temp")
             .ok()
             .and_then(|temp_str| temp_str.trim().parse::<f64>().ok())
-            .map(|temp| format!("{:.1}°C", temp / 1000.0))
+            .map(|temp| format!("({:.1}°C)", temp / 1000.0))
             .unwrap_or_default()
     }
 
     #[cfg(target_os = "netbsd")]
     {
         Command::new("envstat")
-            .arg("-d")
-            .arg("acpitz0")
             .output()
             .ok()
             .and_then(|output| String::from_utf8(output.stdout).ok())
             .and_then(|output_str| {
-                output_str.lines().next()
-                    .and_then(|line| line.split_whitespace().nth(1))
+                output_str
+                    .lines()
+                    .skip_while(|line| *line != "[acpitz0]")
+                    .nth(1)
+                    .and_then(|line| line.split(':').nth(1))
+                    .map(|s| s.split_whitespace().next().unwrap_or(""))
                     .and_then(|temp_str| temp_str.parse::<f64>().ok())
-                    .map(|temp| format!("{:.1}°C", temp))
+                    .map(|temp| format!("({:.1}°C)", temp))
             })
             .unwrap_or_default()
     }
@@ -109,19 +111,32 @@ fn get_gpu_temp() -> String {
             .output()
             .ok()
             .and_then(|output| String::from_utf8(output.stdout).ok())
-            .and_then(|temp_str| temp_str.lines().next().and_then(|s| s.trim().parse::<f64>().ok()))
-            .map(|temp| format!("{:.1}°C", temp))
+            .and_then(|temp_str| {
+                temp_str
+                    .lines()
+                    .next()
+                    .and_then(|s| s.trim().parse::<f64>().ok())
+            })
+            .map(|temp| format!("({:.1}°C)", temp))
             .unwrap_or_else(|| {
                 Command::new("sensors")
                     .output()
                     .ok()
                     .and_then(|output| String::from_utf8(output.stdout).ok())
                     .and_then(|output_str| {
-                        output_str.lines()
-                            .find(|line| line.contains("temp1:") || line.contains("edge:") || line.contains("junction:") || line.contains("mem:"))
+                        output_str
+                            .lines()
+                            .find(|line| {
+                                line.contains("temp1:")
+                                    || line.contains("edge:")
+                                    || line.contains("junction:")
+                                    || line.contains("mem:")
+                            })
                             .and_then(|line| line.split_whitespace().nth(1))
-                            .and_then(|temp_str| temp_str.trim_end_matches("°C").parse::<f64>().ok())
-                            .map(|temp| format!("{:.1}°C", temp))
+                            .and_then(|temp_str| {
+                                temp_str.trim_end_matches("°C").parse::<f64>().ok()
+                            })
+                            .map(|temp| format!("({:.1}°C)", temp))
                     })
                     .unwrap_or_default()
             })
@@ -130,20 +145,22 @@ fn get_gpu_temp() -> String {
     #[cfg(target_os = "netbsd")]
     {
         Command::new("envstat")
-            .arg("-d")
             .output()
             .ok()
             .and_then(|output| String::from_utf8(output.stdout).ok())
             .and_then(|output_str| {
-                output_str.lines().find(|line| line.contains("gpu0 temperature"))
-                    .and_then(|line| line.split_whitespace().nth(2))
+                output_str
+                    .lines()
+                    .skip_while(|line| *line != "[acpitz2]")
+                    .nth(1)
+                    .and_then(|line| line.split(':').nth(1))
+                    .map(|s| s.split_whitespace().next().unwrap_or(""))
                     .and_then(|temp_str| temp_str.parse::<f64>().ok())
-                    .map(|temp| format!("{:.1}°C", temp))
+                    .map(|temp| format!("({:.1}°C)", temp))
             })
             .unwrap_or_default()
     }
 }
-
 
 pub fn get_disk_usage() -> String {
     let output_str = match Command::new("df").arg("-h").output() {
@@ -188,7 +205,7 @@ pub fn get_cpu_info() -> String {
     }
 
     format!(
-        "{}({})",
+        "{}{}",
         &cpu.split('@').next().unwrap_or_default(),
         get_cpu_temp()
     )
@@ -597,12 +614,7 @@ pub fn get_gpu_info() -> Result<String, Error> {
                 "GPU name not found",
             ))? + start_index;
             let gpu_name = &line[start_index..end_index];
-            return Ok(format!(
-                "{} {} ({})",
-                prefix,
-                gpu_name.trim(),
-                get_gpu_temp()
-            ));
+            return Ok(format!("{} {} {}", prefix, gpu_name.trim(), get_gpu_temp()));
         }
     }
 

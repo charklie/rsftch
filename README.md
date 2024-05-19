@@ -45,6 +45,9 @@
 - `xrandr`
 - Any nerdfont
 
+For NVIDIA cards:
+- `nvidia-smi` (sometimes packaged with `nvidia-utils`)
+
 ### Installation
 #### Cargo _(recommended)_
 `cargo install rsftch`

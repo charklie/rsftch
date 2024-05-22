@@ -44,6 +44,7 @@
 ### Dependencies
 - `pciutils`
 - `xrandr`
+- `glibc`
 - Any nerdfont
 
 For NVIDIA cards:
@@ -185,7 +186,7 @@ Color config is located at: ~/.config/rsftch/colors.json
 Currently Rsftch only works on GNU/Linux, (most) BSD distributions and (probably) Mac OS.
 
 ### Contribrutions
-All PRs or just an issue recommending an enhancement is always welcome. 
+All PRs are always welcome, just remember to make sure it works on both NetBSD and Linux.
 
 ### Thanks
 Thank you to:
@@ -195,7 +196,7 @@ Thank you to:
 ### Todo
 - [X] Configuration via JSON
 - [X] Version command
-- [ ] Rewrite memory function
+- [X] Rewrite memory function
 - [ ] Optimizations (?)
 - [ ] Automatic ASCII generation 
 - [ ] Add TOML / JSONC support

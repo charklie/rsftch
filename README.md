@@ -76,7 +76,7 @@ make install
 There is an .deb file availible in the [releases](https://github.com/charklie/rsftch/releases) section, for [Arch](https://github.com/helixarch/debtap) and Debian / Ubuntu users. 
 
 #### Binary
-If you don't have cargo installed you can download the [binary](https://github.com/charklie/rsftch/releases) and move it directly to your `/usr/bin`, although this is very unsafe and should _never_ be done.
+If you don't have cargo installed you can download the [binary](https://github.com/charklie/rsftch/releases) and move it directly to your `/usr/bin`, although this is very unsafe and should be rarely ever done.
 
 ### Configuration
 #### Info:

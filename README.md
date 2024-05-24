@@ -56,7 +56,7 @@ For NVIDIA cards:
 
 #### Source
 ```
-git clone https://github.com/charklie/rsftch.git`
+git clone https://github.com/charklie/rsftch.git
 cd rsftch
 cargo install --path .
 ```

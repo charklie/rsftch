@@ -214,7 +214,7 @@ fn get_package_managers() -> Vec<&'static str> {
     let possible_managers = vec![
         "xbps-query",
         "dnf",
-        "dkpg-query",
+        "dkpg",
         "rpm",
         "apt",
         "pacman",
@@ -295,10 +295,10 @@ pub fn get_packages() -> String {
                     });
                 }
             }
-            "dpkg-query" => {
-                // dpkg-query -f $(binary:Package) -W
+            "dpkg" => {
+                // dpkg --get-selections
                 if let Ok(output) = Command::new(*manager)
-                    .args(["-f", "$(binary:Package)", "-W"])
+                    .args(["--get-selections"])
                     .stdout(Stdio::piped())
                     .spawn()
                     .and_then(|child| {

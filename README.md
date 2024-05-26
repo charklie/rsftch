@@ -29,7 +29,6 @@
 ### Supported package managers
 - xbps
 - dnf
-- dpkg
 - rpm
 - apt
 - pacman

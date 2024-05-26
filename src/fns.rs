@@ -214,7 +214,6 @@ fn get_package_managers() -> Vec<&'static str> {
     let possible_managers = vec![
         "xbps-query",
         "dnf",
-        "dkpg",
         "rpm",
         "apt",
         "pacman",
@@ -295,29 +294,6 @@ pub fn get_packages() -> String {
                     });
                 }
             }
-            "dpkg" => {
-                // dpkg --get-selections
-                if let Ok(output) = Command::new(*manager)
-                    .args(["--get-selections"])
-                    .stdout(Stdio::piped())
-                    .spawn()
-                    .and_then(|child| {
-                        Command::new("wc")
-                            .args(["-l"])
-                            .stdin(child.stdout.unwrap())
-                            .output()
-                    })
-                {
-                    output.status.success().then(|| {
-                        if let Some(count) = String::from_utf8(output.stdout)
-                            .ok()
-                            .and_then(|count_str| count_str.trim().parse::<i16>().ok())
-                        {
-                            packs_numbers.lock().unwrap().push(count)
-                        }
-                    });
-                }
-            }
             "rpm" => {
                 // rpm -qa --last
                 if let Ok(output) = Command::new(*manager)
@@ -343,8 +319,8 @@ pub fn get_packages() -> String {
             }
             "apt" => {
                 // apt list --installed
-                if let Ok(output) = Command::new("apt-cache")
-                    .args(["pkgnames"])
+                if let Ok(output) = Command::new("apt")
+                    .args(["list", "--installed"])
                     .stdout(Stdio::piped())
                     .spawn()
                     .and_then(|child| {

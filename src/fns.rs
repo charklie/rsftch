@@ -161,6 +161,42 @@ fn get_gpu_temp() -> String {
     }
 }
 
+pub fn get_gpu_info() -> Result<String, Error> {
+    let output = Command::new("lspci").arg("-nnk").output()?;
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let reader = BufReader::new(stdout.as_bytes());
+
+    for line in reader.lines() {
+        let line = line?;
+        if let Some(start_index) = line.find("NVIDIA").or_else(|| line.find("AMD")) {
+            let (prefix, prefix_len) = if line.contains("NVIDIA") {
+                ("NVIDIA", "NVIDIA".len())
+            } else if line.contains("AMD") {
+                ("AMD Radeon", "AMD Radeon".len())
+            } else {
+                let vendor_index = line.find("controller").unwrap_or(0);
+                let vendor_str = &line[..vendor_index];
+                (vendor_str, 0)
+            };
+            let start_index = start_index + prefix_len;
+            let start_index = line[start_index..].find('[').ok_or(Error::new(
+                std::io::ErrorKind::NotFound,
+                "GPU name not found",
+            ))? + start_index
+                + 1;
+            let end_index = line[start_index..].find(']').ok_or(Error::new(
+                std::io::ErrorKind::NotFound,
+                "GPU name not found",
+            ))? + start_index;
+            let gpu_name = &line[start_index..end_index];
+            return Ok(format!("{} {} {}", prefix, gpu_name.trim(), get_gpu_temp()));
+        }
+    }
+
+    Err(Error::new(std::io::ErrorKind::NotFound, "GPU not found"))
+}
+
 pub fn get_disk_usage() -> String {
     let output_str = match Command::new("df").arg("-h").output() {
         Ok(output) if output.status.success() => {
@@ -560,42 +596,6 @@ pub fn get_res() -> String {
         .join(", ")
 }
 
-pub fn get_gpu_info() -> Result<String, Error> {
-    let output = Command::new("lspci").arg("-nnk").output()?;
-
-    let stdout = String::from_utf8_lossy(&output.stdout);
-    let reader = BufReader::new(stdout.as_bytes());
-
-    for line in reader.lines() {
-        let line = line?;
-        if let Some(start_index) = line.find("NVIDIA").or_else(|| line.find("AMD")) {
-            let (prefix, prefix_len) = if line.contains("NVIDIA") {
-                ("NVIDIA", "NVIDIA".len())
-            } else if line.contains("AMD") {
-                ("AMD Radeon", "AMD Radeon".len())
-            } else {
-                let vendor_index = line.find("controller").unwrap_or(0);
-                let vendor_str = &line[..vendor_index];
-                (vendor_str, 0)
-            };
-            let start_index = start_index + prefix_len;
-            let start_index = line[start_index..].find('[').ok_or(Error::new(
-                std::io::ErrorKind::NotFound,
-                "GPU name not found",
-            ))? + start_index
-                + 1;
-            let end_index = line[start_index..].find(']').ok_or(Error::new(
-                std::io::ErrorKind::NotFound,
-                "GPU name not found",
-            ))? + start_index;
-            let gpu_name = &line[start_index..end_index];
-            return Ok(format!("{} {} {}", prefix, gpu_name.trim(), get_gpu_temp()));
-        }
-    }
-
-    Err(Error::new(std::io::ErrorKind::NotFound, "GPU not found"))
-}
-
 pub fn get_uptime() -> Result<String, Error> {
     let file = File::open("/proc/uptime").expect("Failed to open /proc/uptime");
     let mut reader = BufReader::new(file);
@@ -693,6 +693,14 @@ pub fn get_wm() -> String {
 pub fn get_mem() -> String {
     #[cfg(target_os = "linux")]
     {
+        let parse_meminfo_value = |line: &str| {
+            line.split_whitespace()
+                .nth(1)
+                .unwrap_or("0")
+                .parse()
+                .unwrap_or(0)
+        };
+        
         if let Ok(file) = File::open("/proc/meminfo") {
             let reader = BufReader::new(file);
             let mut mem_total: u64 = 0;
@@ -727,7 +735,7 @@ pub fn get_mem() -> String {
         {
             let total = hw_physmem.parse::<u64>().unwrap_or(0);
             let free_pages = vm_stats_vm_v_free_count.parse::<u64>().unwrap_or(0);
-            let page_size = sysconf("_SC_PAGESIZE").unwrap_or(4096) as u64;
+            let page_size = sysconf(libc::_SC_PAGESIZE).unwrap_or(4096) as u64;
 
             let total_bytes = total * page_size;
             let free_bytes = free_pages * page_size;
@@ -743,14 +751,6 @@ pub fn get_mem() -> String {
     }
 
     String::new()
-}
-
-fn parse_meminfo_value(line: &str) -> u64 {
-    line.split_whitespace()
-        .nth(1)
-        .unwrap_or("0")
-        .parse()
-        .unwrap_or(0)
 }
 
 fn bytes_to_gib(bytes: u64) -> f64 {

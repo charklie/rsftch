@@ -1,3 +1,4 @@
+use colored::Color;
 use colored::Colorize;
 use std::env;
 use std::mem;
@@ -118,15 +119,7 @@ fn print_ascii(
     custom_color_config_file: Option<String>,
 ) -> String {
     if !overriden_colors {
-        match color {
-            Color::Green => ascii_art.green().bold().to_string(),
-            Color::Red => ascii_art.bright_red().bold().to_string(),
-            Color::Purple => ascii_art.purple().bold().to_string(),
-            Color::Yellow => ascii_art.yellow().bold().to_string(),
-            Color::Blue => ascii_art.blue().bold().to_string(),
-            Color::Black => ascii_art.black().bold().to_string(),
-            Color::White => ascii_art.white().bold().to_string(),
-        }
+        ascii_art.color(color).bold().to_string()
     } else {
         print_ascii(
             ascii_art,
@@ -143,40 +136,11 @@ fn print_ascii(
 
 fn print_data(infos: &InfoItem, color: Color, connector: &'static str) -> String {
     let arrow = "~>";
-    let coloreds = match color {
-        Color::Green => (
-            connector.green().to_string(),
-            infos.icon.green().to_string(),
-            arrow.green().to_string(),
-        ),
-        Color::Red => (
-            connector.bright_red().to_string(),
-            infos.icon.bright_red().to_string(),
-            arrow.bright_red().to_string(),
-        ),
-        Color::Purple => (
-            connector.purple().to_string(),
-            infos.icon.purple().to_string(),
-            arrow.purple().to_string(),
-        ),
-        Color::Yellow => (
-            connector.yellow().to_string(),
-            infos.icon.yellow().to_string(),
-            arrow.yellow().to_string(),
-        ),
-        Color::Blue => (
-            connector.blue().to_string(),
-            infos.icon.blue().to_string(),
-            arrow.blue().to_string(),
-        ),
-        Color::Black => (
-            connector.black().to_string(),
-            infos.icon.black().to_string(),
-            arrow.black().to_string(),
-        ),
-        Color::White => (connector.to_string(), "".to_string(), arrow.to_string()),
-    };
-
+    let coloreds = (
+        connector.color(color).to_string(),
+        infos.icon.color(color).to_string(),
+        arrow.color(color).to_string(),
+    );
     let alignment_space = " ".repeat(infos.alignment_space as usize);
 
     format!(
@@ -343,11 +307,8 @@ fn info(
         info_set
     };
 
-    match get_only_info {
-        Some(info) => {
-            return format!("{}", parse_info(info).value.trim_matches('"'));
-        }
-        None => {}
+    if get_only_info.is_some() {
+        return format!("{}", parse_info(get_only_info.unwrap()).value.trim_matches('"'));
     }
 
     let info_set1 = parse_json_lists("info1");

@@ -42,7 +42,7 @@
 
 ### Dependencies
 - `pciutils`
-- `xrandr`
+- `libxrandr`
 - `glibc`
 - Any nerdfont
 
@@ -175,7 +175,7 @@ Info config is located at:  ~/.config/rsftch/info.json
 Color config is located at: ~/.config/rsftch/colors.json
 ```
 ### Time comparison
-- Rsftch: 22.93 milliseconds
+- Rsftch: 33.26 milliseconds
 - Neofetch: 284.03 milliseconds
 - Screenfetch: 832.59 milliseconds
 

@@ -173,7 +173,11 @@ pub fn get_gpu_info() -> Result<String, Error> {
             let (prefix, prefix_len) = if line.contains("NVIDIA") {
                 ("NVIDIA", "NVIDIA".len())
             } else if line.contains("AMD") {
-                ("AMD Radeon", "AMD Radeon".len())
+                if line.contains("Radeon") {
+                    ("AMD", "AMD".len())
+                } else {
+                    ("AMD Radeon", "AMD Radeon".len())
+                }
             } else {
                 let vendor_index = line.find("controller").unwrap_or(0);
                 let vendor_str = &line[..vendor_index];
@@ -691,90 +695,42 @@ pub fn get_wm() -> String {
 }
 
 pub fn get_mem() -> String {
-    #[cfg(target_os = "linux")]
-    {
-        let parse_meminfo_value = |line: &str| {
-            line.split_whitespace()
-                .nth(1)
-                .unwrap_or("0")
-                .parse()
-                .unwrap_or(0)
-        };
-        
-        if let Ok(file) = File::open("/proc/meminfo") {
-            let reader = BufReader::new(file);
-            let mut mem_total: u64 = 0;
-            let mut mem_free: u64 = 0;
+    let bytes_to_gib = |bytes| {
+        bytes as f64 / (1024.0 * 1024.0 * 1024.0)
+    };
 
-            for line in reader.lines() {
-                if let Ok(line) = line {
-                    if line.starts_with("MemTotal:") {
-                        mem_total = parse_meminfo_value(&line);
-                    } else if line.starts_with("MemFree:") {
-                        mem_free = parse_meminfo_value(&line);
-                    }
+    let parse_meminfo_value = |line: &str| {
+        line.split_whitespace()
+            .nth(1)
+            .unwrap_or("0")
+            .parse()
+            .unwrap_or(0)
+    };
+
+    if let Ok(file) = File::open("/proc/meminfo") {
+        let reader = BufReader::new(file);
+        let mut mem_total: u64 = 0;
+        let mut mem_free: u64 = 0;
+
+        for line in reader.lines() {
+            if let Ok(line) = line {
+                if line.starts_with("MemTotal:") {
+                    mem_total = parse_meminfo_value(&line);
+                } else if line.starts_with("MemFree:") {
+                    mem_free = parse_meminfo_value(&line);
                 }
             }
-
-            let used = mem_total - mem_free;
-            return format!(
-                "{:.2} GiB / {:.2} GiB",
-                bytes_to_gib(used * 1024),
-                bytes_to_gib(mem_total * 1024)
-            );
         }
-   }
 
-    #[cfg(target_os = "netbsd")]
-    {
-        let hw_physmem = sysctl("hw.physmem");
-        let vm_stats_vm_v_free_count = sysctl("vm.stats.vm.v_free_count");
-
-        if let (Some(hw_physmem), Some(vm_stats_vm_v_free_count)) =
-            (hw_physmem, vm_stats_vm_v_free_count)
-        {
-            let total = hw_physmem.parse::<u64>().unwrap_or(0);
-            let free_pages = vm_stats_vm_v_free_count.parse::<u64>().unwrap_or(0);
-            let page_size = sysconf(libc::_SC_PAGESIZE).unwrap_or(4096) as u64;
-
-            let total_bytes = total * page_size;
-            let free_bytes = free_pages * page_size;
-
-            let used_bytes = total_bytes - free_bytes;
-
-            return format!(
-                "{:.2} GiB / {:.2} GiB",
-                bytes_to_gib(used_bytes),
-                bytes_to_gib(total_bytes)
-            );
-        }
+        let used = mem_total - mem_free;
+        return format!(
+            "{:.2} GiB / {:.2} GiB",
+            bytes_to_gib(used * 1024),
+            bytes_to_gib(mem_total * 1024)
+        );
     }
 
     String::new()
-}
-
-fn bytes_to_gib(bytes: u64) -> f64 {
-    bytes as f64 / (1024.0 * 1024.0 * 1024.0)
-}
-
-#[cfg(target_os = "netbsd")]
-fn sysctl(key: &str) -> Option<String> {
-    let output = std::process::Command::new("sysctl")
-        .arg("-n")
-        .arg(key)
-        .output()
-        .ok()?;
-    let stdout = String::from_utf8(output.stdout).ok()?;
-    Some(stdout.trim().to_string())
-}
-
-#[cfg(target_os = "netbsd")]
-fn sysconf(name: i32) -> Option<i64> {
-    let result = unsafe { libc::sysconf(name) };
-    if result == -1 {
-        return None;
-    }
-    Some(result)
 }
 
 pub fn uname_r() -> String {

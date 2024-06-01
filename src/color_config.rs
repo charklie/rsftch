@@ -1,20 +1,10 @@
+use colored::Color;
 use serde::Deserialize;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::Read;
 
 use crate::fns::home_dir;
-
-#[derive(Debug, PartialEq)]
-pub enum Color {
-    Green,
-    Red,
-    Purple,
-    Yellow,
-    Blue,
-    Black,
-    White,
-}
 
 #[derive(Debug, Deserialize)]
 pub struct JsonColors {
@@ -51,7 +41,7 @@ impl JsonColors {
             Some(color_str) => match color_str.to_ascii_lowercase().as_str() {
                 "green" => Some(Color::Green),
                 "red" => Some(Color::Red),
-                "purple" | "magenta" => Some(Color::Purple),
+                "purple" | "magenta" => Some(Color::Magenta),
                 "yellow" => Some(Color::Yellow),
                 "blue" => Some(Color::Blue),
                 "black" => Some(Color::Black),

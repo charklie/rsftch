@@ -191,6 +191,7 @@ All PRs are always welcome, just remember to make sure it works on both NetBSD a
 Thank you to:
 - [@siris](https://www.github.com/siris) for helping me with speeding up everything massively and packaging rsftch for Funtoo Linux.
 - [@0323pin](https://www.github.com/0323pin) for packaging rsftch on pkgsrc and uploading it to [beucismis/awesome-fetch](https://github.com/beucismis/awesome-fetch).
+- [@MasterRoby3](https://www.github.com/MasterRoby3) for fixing `apt` support in packages function.
 
 ### Todo
 - [X] Configuration via JSON

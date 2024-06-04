@@ -358,7 +358,7 @@ pub fn get_packages() -> String {
                 }
             }
             "apt" => {
-                // dpkg --get-selections | grep install
+                // dpkg --get-selections | grep -w install
                 if let Ok(output) = Command::new("dpkg")
                     .args(["--get-selections"])
                     .stdout(Stdio::piped())

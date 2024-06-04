@@ -358,16 +358,23 @@ pub fn get_packages() -> String {
                 }
             }
             "apt" => {
-                // apt list --installed
-                if let Ok(output) = Command::new("apt")
-                    .args(["list", "--installed"])
+                // dpkg --get-selections | grep install
+                if let Ok(output) = Command::new("dpkg")
+                    .args(["--get-selections"])
                     .stdout(Stdio::piped())
                     .spawn()
                     .and_then(|child| {
-                        Command::new("wc")
-                            .args(["-l"])
+                        Command::new("grep")
+                            .args(["-w", "install"])
+                            .stdout(Stdio::piped())
                             .stdin(child.stdout.unwrap())
-                            .output()
+                            .spawn()
+                            .and_then(|child| {
+                                Command::new("wc")
+                                    .args(["-l"])
+                                    .stdin(child.stdout.unwrap())
+                                    .output()
+                            })
                     })
                 {
                     output.status.success().then(|| {

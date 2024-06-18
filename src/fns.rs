@@ -584,10 +584,10 @@ pub fn get_packages() -> String {
 }
 
 pub fn get_res() -> String {
-    let output = Command::new("xrandr")
-        .arg("--query")
-        .output()
-        .expect("Failed to execute xrandr command");
+    let output = match Command::new("xrandr").arg("--query").output() {
+        Ok(out) => out,
+        Err(_err) => return String::new(),
+    };
 
     String::from_utf8_lossy(&output.stdout)
         .lines()
@@ -702,9 +702,7 @@ pub fn get_wm() -> String {
 }
 
 pub fn get_mem() -> String {
-    let bytes_to_gib = |bytes| {
-        bytes as f64 / (1024.0 * 1024.0 * 1024.0)
-    };
+    let bytes_to_gib = |bytes| bytes as f64 / (1024.0 * 1024.0 * 1024.0);
 
     let parse_meminfo_value = |line: &str| {
         line.split_whitespace()

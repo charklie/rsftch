@@ -146,9 +146,6 @@ If you've found a solution of these, please submit a PR.
 ##### Running `rsftch` in terminal doesn't work (command not found)
 Solution: (If you installed with cargo) Add ~/.cargo/bin/ to PATH, how varies from shell to shell, here are some popular ones:
 
-##### JSON Configuration error
-Solution: If you were a user prior to the rework, there's a chance your config might be invalid, either try an example or read the guide under "Configuration". Otherwise, if the examples don't work and you've reinstalled rsftch with the latest update, submit an issue with the "urgent" label.
-
 Bash / Zsh:
 `echo "PATH=\$PATH:~/.cargo/bin/" >> (.bashrc / .zshrc path)`
 
@@ -164,6 +161,9 @@ Elvish:
 If none of these work, or you are unsure how to do this in your shell, consider moving the binary to /usr/bin, example command:
 `sudo mv ~/.cargo/bin/rsftch /usr/bin`
 
+##### JSON Configuration error
+Solution: If you were a user prior to the rework, there's a chance your config might be invalid, either try an example or read the guide under "Configuration". Otherwise, if the examples don't work and you've reinstalled rsftch with the latest update, submit an issue with the "urgent" label.
+
 #### Other issues
 File an issue.
 
@@ -178,7 +178,8 @@ Usage: rsftch [-h / --help / --usage] [-v / --version] [-o / --override <distro 
           --config                Specify another info config file to be used.
           --ignore-config         Ignores configuration and uses the example one.
 
-Configuration file is located at: ~/.config/rsftch/info.json```
+Configuration file is located at: ~/.config/rsftch/info.json
+```
 
 ### Time comparison
 - Rsftch: 45.12 milliseconds (all infos enabled)

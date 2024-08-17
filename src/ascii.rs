@@ -1,4 +1,4 @@
-use crate::fns::{get_os_release_pretty_name, uname_s};
+use crate::info::{os_pretty_name, uname_s};
 
 macro_rules! ascii {
     ($overriden_ascii:expr, $search_string:expr, $return_string:expr) => {{
@@ -6,7 +6,7 @@ macro_rules! ascii {
             .clone()
             .map(|o| o.to_ascii_lowercase())
             .unwrap_or_else(|| {
-                get_os_release_pretty_name(None, "ID")
+                os_pretty_name(None, "ID")
                     .unwrap_or_default()
                     .to_ascii_lowercase()
             });

@@ -1,5 +1,8 @@
 {
-  "info1": [ "os", "kernel", "hostname", "packs" ],
-  "info2": [ "user", "term", "shell", "dewm" ],
-  "info3": [ "processor", "graphics", "mem" ]
+  "color": ["red", "green", "blue", "purple"],
+  "info": [
+    ["os", "kernel", "packs"],
+    ["user", "host", "de"],
+    ["cpu", "gpu", "mem"]
+  ]
 }

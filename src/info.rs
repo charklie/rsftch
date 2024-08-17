@@ -1,4 +1,5 @@
 use rayon::prelude::*;
+use regex::Regex;
 use std::{
     env,
     fs::{self, read_to_string, File},
@@ -9,45 +10,29 @@ use std::{
     time::Duration,
 };
 
-pub fn help() {
+pub(crate) fn help() {
     println!(
-        r#"Usage: rsftch [OPTION...] [OVERRIDE] [MARGIN] [CONFIG FILE(s)] [INFO]
+        r#"Usage: rsftch [-h / --help / --usage] [-v / --version] [-o / --override <distro name>] [-m / --margin <margin>] [--ignore-config] [--config <absolute path to config>]
         
       -h, --help, --usage         Bring up this menu.
       -v, --version               Print version number.
-      -o, --override              Overrides distribution, affects ASCII and "distro" info. Running without
-                                  an argument prints all possible options.
-      -m, --margin                Add margin to the info sections, default 1.
-      -c, --color-config          Specify another color config file, to be used instead of the default one.
-      -i, --info-config           Specify another info config file, to be used instead of the default one.
-          --ignore-color-config   Ignores the custom color config and uses the default one.
-          --ignore-info-config    Ignores the custom info config and uses the default one.
-          --ignore-config         Ignores both configs and uses the default ones.
-          --info                  Only prints the value of the following arguments info, for example
-                                  `rsftch --info distro` would output: "EndeavourOS".
+      -o, --override              Overrides distribution, affects ASCII and "distro" info. Running without an argument prints all possible options.
+      -m, --margin                Add margin to the info sections, default 1. E.g. `rsftch --info distro` would output: "EndeavourOS".
+          --config                Specify another info config file to be used.
+          --ignore-config         Ignores configuration and uses the example one.
 
-    Info config is located at:  ~/.config/rsftch/info.json
-    Color config is located at: ~/.config/rsftch/colors.json"#
+    Configuration file is located at: ~/.config/rsftch/info.json"#
     );
 }
 
-pub fn whoami() -> String {
+pub(crate) fn whoami() -> String {
     let output = Command::new("whoami")
         .output()
         .expect("`whoami` failed, are you on a Unix-like operating system?");
     String::from_utf8_lossy(&output.stdout).trim().to_string()
 }
 
-pub fn home_dir() -> &'static str {
-    if let Some(home) = option_env!("HOME") {
-        return home;
-    } else {
-        eprintln!("Couldn't find home directory, are you on a Unix-like operating system? \nIf you are, use the \"--ignore-config\" flag, or the \"--(info/color)-config\" flag and set \nan other file to act as the config file.");
-        return "";
-    }
-}
-
-pub fn get_timezone() -> String {
+pub(crate) fn timezone() -> String {
     let timezone_path = Path::new("/etc/timezone");
     if timezone_path.exists() {
         if let Ok(timezone) = fs::read_to_string(timezone_path) {
@@ -71,14 +56,16 @@ pub fn get_timezone() -> String {
     String::new()
 }
 
-pub fn get_cpu_temp() -> String {
+pub(crate) fn cpu_temp() -> String {
     #[cfg(target_os = "linux")]
     {
-        fs::read_to_string("/sys/class/thermal/thermal_zone0/temp")
-            .ok()
-            .and_then(|temp_str| temp_str.trim().parse::<f64>().ok())
-            .map(|temp| format!("({:.1}°C)", temp / 1000.0))
-            .unwrap_or_default()
+        let output_str = Command::new("sensors").output().unwrap().stdout;
+
+        Regex::new(r"Package id 0:\s+\+(\d+\.\d+)°C")
+            .unwrap()
+            .captures(&*String::from_utf8_lossy(&output_str))
+            .map_or_else(|| "N/A".to_string(), |caps| format!("({}°C)", &caps[1]))
+
     }
 
     #[cfg(target_os = "netbsd")]
@@ -101,7 +88,7 @@ pub fn get_cpu_temp() -> String {
     }
 }
 
-fn get_gpu_temp() -> String {
+fn gpu_temp() -> String {
     #[cfg(target_os = "linux")]
     {
         Command::new("nvidia-smi")
@@ -161,7 +148,7 @@ fn get_gpu_temp() -> String {
     }
 }
 
-pub fn get_gpu_info() -> Result<String, Error> {
+pub(crate) fn gpu_info() -> Result<String, Error> {
     let output = Command::new("lspci").arg("-nnk").output()?;
 
     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -194,14 +181,14 @@ pub fn get_gpu_info() -> Result<String, Error> {
                 "GPU name not found",
             ))? + start_index;
             let gpu_name = &line[start_index..end_index];
-            return Ok(format!("{} {} {}", prefix, gpu_name.trim(), get_gpu_temp()));
+            return Ok(format!("{} {} {}", prefix, gpu_name.trim(), gpu_temp()));
         }
     }
 
     Err(Error::new(std::io::ErrorKind::NotFound, "GPU not found"))
 }
 
-pub fn get_disk_usage() -> String {
+pub(crate) fn disk_usage() -> String {
     let output_str = match Command::new("df").arg("-h").output() {
         Ok(output) if output.status.success() => {
             String::from_utf8(output.stdout).unwrap_or_default()
@@ -225,11 +212,11 @@ pub fn get_disk_usage() -> String {
     String::new()
 }
 
-pub fn get_cpu_info() -> String {
-    let cpuinfo = read_to_string("/proc/cpuinfo").expect("Failed to read /proc/cpuinfo");
+pub(crate) fn cpu_info() -> String {
+    let cpuinfo_file = read_to_string("/proc/cpuinfo").expect("Failed to read /proc/cpuinfo");
     let mut cpu = String::new();
 
-    for line in cpuinfo.lines() {
+    for line in cpuinfo_file.lines() {
         let parts: Vec<&str> = line.split(": ").map(|s| s.trim()).collect();
         if parts.len() == 2 {
             match parts[0] {
@@ -246,11 +233,11 @@ pub fn get_cpu_info() -> String {
     format!(
         "{}{}",
         &cpu.split('@').next().unwrap_or_default(),
-        get_cpu_temp()
+        cpu_temp()
     )
 }
 
-fn get_package_managers() -> Vec<&'static str> {
+fn package_managers() -> Vec<&'static str> {
     let possible_managers = vec![
         "xbps-query",
         "dnf",
@@ -283,8 +270,8 @@ fn get_package_managers() -> Vec<&'static str> {
     vec_managers
 }
 
-pub fn get_packages() -> String {
-    let installed_managers = get_package_managers();
+pub(crate) fn packages() -> String {
+    let installed_managers = package_managers();
     let packs_numbers: Arc<Mutex<Vec<i16>>> = Arc::new(Mutex::new(Vec::new()));
     installed_managers.par_iter().for_each(|manager| {
         match *manager {
@@ -412,7 +399,7 @@ pub fn get_packages() -> String {
             }
             "emerge" => {
                 // qlist -I
-                if get_os_release_pretty_name(None, "ID")
+                if os_pretty_name(None, "ID")
                     .unwrap_or("".to_string())
                     .to_ascii_lowercase()
                     .contains("funtoo")
@@ -583,7 +570,7 @@ pub fn get_packages() -> String {
     total_packages.to_string()
 }
 
-pub fn get_res() -> String {
+pub(crate) fn res() -> String {
     let output = match Command::new("xrandr").arg("--query").output() {
         Ok(out) => out,
         Err(_err) => return String::new(),
@@ -607,7 +594,7 @@ pub fn get_res() -> String {
         .join(", ")
 }
 
-pub fn get_uptime() -> Result<String, Error> {
+pub(crate) fn uptime() -> Result<String, Error> {
     let file = File::open("/proc/uptime").expect("Failed to open /proc/uptime");
     let mut reader = BufReader::new(file);
     let mut line = String::new();
@@ -662,10 +649,7 @@ fn search_file(custom_paths: Vec<&'static str>, search_variable: &str) -> Option
     None
 }
 
-pub fn get_os_release_pretty_name(
-    overriden_ascii: Option<String>,
-    identifier: &str,
-) -> Option<String> {
+pub(crate) fn os_pretty_name(overriden_ascii: Option<String>, identifier: &str) -> Option<String> {
     if overriden_ascii.is_some() {
         return overriden_ascii;
     }
@@ -673,7 +657,7 @@ pub fn get_os_release_pretty_name(
     search_file(vec!["/etc/os-release", "/etc/lsb-release"], identifier)
 }
 
-pub fn get_wm() -> String {
+pub(crate) fn wm() -> String {
     if env::var("DISPLAY").is_err() {
         return String::new();
     }
@@ -701,44 +685,40 @@ pub fn get_wm() -> String {
     String::new()
 }
 
-pub fn get_mem() -> String {
-    let bytes_to_gib = |bytes| bytes as f64 / (1024.0 * 1024.0 * 1024.0);
+pub(crate) fn mem() -> String {
+    let kb_to_gb = |kilobytes: u64| kilobytes as f64 / (1024.0 * 1024.0);
 
     let parse_meminfo_value = |line: &str| {
         line.split_whitespace()
             .nth(1)
             .unwrap_or("0")
-            .parse()
+            .parse::<u64>()
             .unwrap_or(0)
     };
 
     if let Ok(file) = File::open("/proc/meminfo") {
         let reader = BufReader::new(file);
         let mut mem_total: u64 = 0;
-        let mut mem_free: u64 = 0;
+        let mut mem_available: u64 = 0;
 
         for line in reader.lines() {
             if let Ok(line) = line {
                 if line.starts_with("MemTotal:") {
                     mem_total = parse_meminfo_value(&line);
-                } else if line.starts_with("MemFree:") {
-                    mem_free = parse_meminfo_value(&line);
+                } else if line.starts_with("MemAvailable:") {
+                    mem_available = parse_meminfo_value(&line);
                 }
             }
         }
 
-        let used = mem_total - mem_free;
-        return format!(
-            "{:.2} GiB / {:.2} GiB",
-            bytes_to_gib(used * 1024),
-            bytes_to_gib(mem_total * 1024)
-        );
+        let used = mem_total - mem_available;
+        return format!("{:.2} GiB / {:.2} GiB", kb_to_gb(used), kb_to_gb(mem_total));
     }
 
     String::new()
 }
 
-pub fn uname_r() -> String {
+pub(crate) fn uname_r() -> String {
     let output = Command::new("uname")
         .arg("-r")
         .output()
@@ -746,12 +726,9 @@ pub fn uname_r() -> String {
     String::from_utf8_lossy(&output.stdout).trim().to_string()
 }
 
-pub fn uname_s(overriden_ascii: Option<String>) -> String {
+pub(crate) fn uname_s(overriden_ascii: Option<String>) -> String {
     if overriden_ascii.is_some() {
-        return match overriden_ascii {
-            Some(str) => str,
-            None => String::new(),
-        };
+        return overriden_ascii.unwrap_or_else(|| String::new());
     }
     let output = Command::new("uname")
         .arg("-s")
@@ -760,7 +737,7 @@ pub fn uname_s(overriden_ascii: Option<String>) -> String {
     String::from_utf8_lossy(&output.stdout).trim().to_string()
 }
 
-pub fn uname_n() -> String {
+pub(crate) fn uname_n() -> String {
     let output = Command::new("uname")
         .arg("-n")
         .output()
@@ -768,12 +745,12 @@ pub fn uname_n() -> String {
     String::from_utf8_lossy(&output.stdout).trim().to_string()
 }
 
-pub fn shell_name() -> String {
+pub(crate) fn shell_name() -> String {
     let shell = env::var("SHELL").expect("SHELL not set");
     let parts: Vec<&str> = shell.split('/').collect();
     parts.last().unwrap().to_string()
 }
 
-pub fn get_terminal() -> String {
+pub(crate) fn terminal() -> String {
     env::var("TERM").unwrap_or("".to_string())
 }

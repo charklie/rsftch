@@ -1,55 +1,53 @@
-use colored::Color;
 use colored::Colorize;
 use std::env;
 use std::mem;
+use std::sync::Arc;
 
 mod ascii;
-mod color_config;
-mod fns;
-mod info_config;
+mod config;
+mod info;
 
 use crate::ascii::*;
-use crate::color_config::*;
-use crate::fns::*;
-use crate::info_config::*;
+use crate::config::*;
+use crate::info::*;
 
 const VERSION: Option<&str> = option_env!("CARGO_PKG_VERSION");
+
+struct InfoItem {
+    title: &'static str,
+    icon: &'static str,
+    value: Arc<dyn Fn() -> String + Send + Sync>,
+}
+
+impl Clone for InfoItem {
+    fn clone(&self) -> Self {
+        InfoItem {
+            title: self.title,
+            icon: self.icon,
+            value: Arc::clone(&self.value),
+        }
+    }
+}
 
 fn main() {
     let mut args: Vec<String> = env::args().collect();
     let mut overriden_ascii: Option<String> = None;
-    let mut info_custom_config: Option<String> = None;
-    let mut color_custom_config: Option<String> = None;
-    let mut get_only_info: Option<String> = None;
-    let mut use_info_custom_config = true;
-    let mut use_color_custom_config = true;
+    let mut custom_config_file: Option<String> = None;
+    let mut ignore_config: bool = false;
     let mut margin: i8 = 1;
 
     for count in 0..args.len() {
         match args[count].to_lowercase().as_str() {
             "-h" | "--help" | "--usage" => return help(),
+            "--ignore-config" => ignore_config = true,
             "-v" | "--version" => {
-                return println!("Rsftch {}\nMade by charklie", VERSION.unwrap_or_default())
-            }
-            "--ignore-color-config" => use_color_custom_config = false,
-            "--ignore-info-config" => use_info_custom_config = false,
-            "--ignore-config" => {
-                use_color_custom_config = false;
-                use_info_custom_config = false;
+                return println!("Rsftch {}\nMade by charklie", VERSION.unwrap_or("Unknown"));
             }
             "-m" | "--margin" => {
                 if count + 1 < args.len() {
                     margin = args[count + 1].parse().unwrap();
                 } else {
                     println!("[{}] Missing argument for margin.\n", "ERROR".red());
-                    return help();
-                }
-            }
-            "--info" => {
-                if count + 1 < args.len() && !args[count + 1].starts_with("-") {
-                    get_only_info = Some(mem::take(&mut args[count + 1]));
-                } else {
-                    println!("[{}] Missing argument for info.\n", "ERROR".red());
                     return help();
                 }
             }
@@ -64,23 +62,12 @@ fn main() {
                     return ascii_test();
                 }
             }
-            "-i" | "--info-config" => {
+            "--config" => {
                 if count + 1 < args.len() && !args[count + 1].starts_with("-") {
-                    info_custom_config = Some(mem::take(&mut args[count + 1]));
+                    custom_config_file = Some(mem::take(&mut args[count + 1]));
                 } else {
                     println!(
-                        "[{}] Missing argument for custom info config file.\n",
-                        "ERROR".red()
-                    );
-                    return help();
-                }
-            }
-            "-c" | "--color-config" => {
-                if count + 1 < args.len() && !args[count + 1].starts_with("-") {
-                    color_custom_config = Some(mem::take(&mut args[count + 1]));
-                } else {
-                    println!(
-                        "[{}] Missing argument for custom color config file.\n",
+                        "[{}] Missing argument for custom config file.\n",
                         "ERROR".red()
                     );
                     return help();
@@ -90,291 +77,212 @@ fn main() {
         };
     }
 
-    println!(
-        "{}",
-        info(
-            overriden_ascii,
-            margin,
-            use_info_custom_config,
-            !use_color_custom_config,
-            info_custom_config,
-            color_custom_config,
-            get_only_info,
-        )
+    let infoitems = get_info_vecs(custom_config_file.clone(), overriden_ascii.clone());
+    print_info(
+        infoitems,
+        margin,
+        overriden_ascii,
+        custom_config_file,
+        ignore_config,
     );
 }
 
-#[derive(Clone, Debug)]
-struct InfoItem {
-    title: &'static str,
-    alignment_space: i8,
-    icon: &'static str,
-    value: String,
-}
-
-fn print_ascii(
-    ascii_art: String,
-    color: Color,
-    overriden_colors: bool,
-    custom_color_config_file: Option<String>,
-) -> String {
-    if !overriden_colors {
-        ascii_art.color(color).bold().to_string()
-    } else {
-        print_ascii(
-            ascii_art,
-            get_color_config(
-                "color0".to_string(),
-                !overriden_colors,
-                custom_color_config_file.clone(),
-            ),
-            false,
-            custom_color_config_file,
-        )
-    }
-}
-
-fn print_data(infos: &InfoItem, color: Color, connector: &'static str) -> String {
-    let arrow = "~>";
-    let coloreds = (
-        connector.color(color).to_string(),
-        infos.icon.color(color).to_string(),
-        arrow.color(color).to_string(),
-    );
-    let alignment_space = " ".repeat(infos.alignment_space as usize);
-
-    format!(
-        "{}{}  {}{} {}  {}",
-        coloreds.0, coloreds.1, infos.title, alignment_space, coloreds.2, infos.value
-    )
-    .to_string()
-}
-
-fn info(
+fn get_info_vecs(
+    custom_config_file: Option<String>,
     overriden_ascii: Option<String>,
-    margin: i8,
-    use_custom_info_config: bool,
-    use_custom_color_config: bool,
-    custom_info_config_file: Option<String>,
-    custom_color_config_file: Option<String>,
-    get_only_info: Option<String>,
-) -> String {
+) -> Vec<Vec<InfoItem>> {
     let distro = InfoItem {
         title: "distro",
-        alignment_space: 2,
         icon: "",
-        value: get_os_release_pretty_name(overriden_ascii.clone(), "NAME")
-            .unwrap_or(uname_s(overriden_ascii.clone())),
+        value: Arc::new(move || {
+            os_pretty_name(overriden_ascii.clone(), "NAME")
+                .unwrap_or(uname_s(overriden_ascii.clone()))
+        }),
     };
 
     let hostname = InfoItem {
         title: "host",
-        alignment_space: 4,
         icon: "󱩛",
-        value: uname_n(),
+        value: Arc::new(move || uname_n()),
     };
 
     let shell = InfoItem {
         title: "shell",
-        alignment_space: 3,
         icon: "",
-        value: shell_name(),
+        value: Arc::new(move || shell_name()),
     };
 
     let kernel = InfoItem {
         title: "kernel",
-        alignment_space: 2,
         icon: "",
-        value: uname_r(),
+        value: Arc::new(move || uname_r()),
     };
 
     let packs = InfoItem {
         title: "packs",
-        alignment_space: 3,
         icon: "󰿺",
-        value: get_packages(),
+        value: Arc::new(move || packages()),
     };
 
     let user = InfoItem {
         title: "user",
-        alignment_space: 4,
         icon: "",
-        value: whoami(),
+        value: Arc::new(move || whoami()),
     };
 
     let term = InfoItem {
         title: "term",
-        alignment_space: 4,
         icon: "",
-        value: get_terminal(),
+        value: Arc::new(move || terminal()),
     };
 
     let de = InfoItem {
         title: "de/wm",
-        alignment_space: 3,
         icon: "",
-        value: get_wm(),
+        value: Arc::new(move || wm()),
     };
 
     let cpu = InfoItem {
         title: "cpu",
-        alignment_space: 5,
         icon: "󰍛",
-        value: get_cpu_info(),
+        value: Arc::new(move || cpu_info()),
     };
 
     let mem = InfoItem {
         title: "mem",
-        alignment_space: 5,
         icon: "",
-        value: get_mem(),
+        value: Arc::new(move || mem()),
     };
 
     let res = InfoItem {
         title: "res",
-        alignment_space: 5,
         icon: "",
-        value: get_res(),
+        value: Arc::new(move || res()),
     };
 
     let uptime = InfoItem {
         title: "uptime",
-        alignment_space: 2,
         icon: "󰄉",
-        value: match get_uptime() {
-            Err(_err) => "".to_string(),
-            Ok(time) => time,
-        },
+        value: Arc::new(move || uptime().unwrap_or_default()),
     };
 
     let gpu = InfoItem {
         title: "gpu",
-        alignment_space: 5,
         icon: "󰍹",
-        value: match get_gpu_info() {
-            Err(_err) => "".to_string(),
-            Ok(gpu_info) => gpu_info,
-        },
+        value: Arc::new(move || gpu_info().unwrap_or_default()),
     };
 
     let disk = InfoItem {
         title: "disk",
-        alignment_space: 4,
         icon: "",
-        value: get_disk_usage(),
+        value: Arc::new(move || disk_usage()),
     };
 
     let timezone = InfoItem {
         title: "timezone",
-        alignment_space: 0,
         icon: "󰥔",
-        value: get_timezone(),
+        value: Arc::new(move || timezone()),
     };
 
     let empty = InfoItem {
         title: "empty",
-        alignment_space: 0,
         icon: "",
-        value: String::new(),
+        value: Arc::new(move || String::new()),
     };
 
-    let parse_info = |name: String| {
-        return match name.to_lowercase().as_str() {
-            "os" | "distro" => &distro,
-            "host" | "hostname" => &hostname,
-            "shell" => &shell,
-            "kernel" => &kernel,
-            "packs" | "packages" => &packs,
-            "user" | "username" => &user,
-            "term" | "terminal" => &term,
-            "de" | "dewm" | "wm" => &de,
-            "cpu" | "processor" => &cpu,
-            "gpu" | "graphics" => &gpu,
-            "mem" | "memory" => &mem,
-            "uptime" => &uptime,
-            "res" | "display" | "resolution" => &res,
-            "time" | "timezone" => &timezone,
-            "disk" | "diskusage" => &disk,
-            _ => &empty,
-        };
-    };
+    let info_vecs: Vec<Vec<String>> = parse_json_to_vec(custom_config_file.clone());
 
-    let parse_json_lists = |set| {
-        let mut info_set: Vec<InfoItem> = vec![];
-        for i in get_info(set, use_custom_info_config, custom_info_config_file.clone()) {
-            info_set.push(parse_info(i).clone());
-        }
-        info_set
-    };
-
-    if get_only_info.is_some() {
-        return format!("{}", parse_info(get_only_info.unwrap()).value.trim_matches('"'));
-    }
-
-    let info_set1 = parse_json_lists("info1");
-    let info_set2 = parse_json_lists("info2");
-    let info_set3 = parse_json_lists("info3");
-
-    let margin_spaces = " ".repeat(margin as usize);
-    let distroascii = print_ascii(
-        get_distro_ascii(overriden_ascii),
-        get_color_config(
-            "color0".to_string(),
-            use_custom_color_config,
-            custom_color_config_file.clone(),
-        ),
-        !use_custom_color_config,
-        custom_color_config_file.clone(),
-    );
-    let infos1 = (1, info_set1);
-    let infos2 = (2, info_set2);
-    let infos3 = (3, info_set3);
-    let mut info_sets = vec![infos1, infos2, infos3];
-
-    println!("{}\n", distroascii);
-
-    for (idx, infos) in info_sets.iter_mut().enumerate() {
-        if idx > 0 {
-            println!();
-        }
-
-        loop_over_data(
-            &mut infos.1,
-            margin_spaces.clone(),
-            infos.0,
-            use_custom_color_config,
-            custom_color_config_file.clone(),
-        );
-    }
-
-    String::new()
+    info_vecs
+        .iter()
+        .map(|inner_list| {
+            inner_list
+                .iter()
+                .map(|c| match c.to_lowercase().as_str() {
+                    "os" | "distro" => distro.clone(),
+                    "host" | "hostname" => hostname.clone(),
+                    "shell" => shell.clone(),
+                    "kernel" => kernel.clone(),
+                    "packs" | "packages" => packs.clone(),
+                    "user" | "username" => user.clone(),
+                    "term" | "terminal" => term.clone(),
+                    "de" | "dewm" | "wm" => de.clone(),
+                    "cpu" | "processor" => cpu.clone(),
+                    "gpu" | "graphics" => gpu.clone(),
+                    "mem" | "memory" => mem.clone(),
+                    "uptime" => uptime.clone(),
+                    "res" | "display" | "resolution" => res.clone(),
+                    "time" | "timezone" => timezone.clone(),
+                    "disk" | "diskusage" => disk.clone(),
+                    _ => empty.clone(),
+                })
+                .collect()
+        })
+        .collect()
 }
 
-fn loop_over_data(
-    list: &mut Vec<InfoItem>,
-    margin: String,
-    section: i8,
-    use_custom_config: bool,
-    custom_color_config_file: Option<String>,
+fn color(
+    ascii: String,
+    custom_config_file: Option<String>,
+    idx: usize,
+    ignore_config: bool,
+) -> String {
+    let colors = get_colors(custom_config_file, ignore_config);
+
+    if idx >= colors.len() {
+        eprintln!("[{}] Not the same amount of info sections as colors, make sure that there is one more color than there are info sections, or try using an example listed in the \"example/\" folder in the github repository.", "ERROR".red());
+    }
+
+    ascii
+        .color(colors[idx])
+        .to_string()
+}
+
+fn print_info(
+    infos: Vec<Vec<InfoItem>>,
+    margin: i8,
+    overriden_ascii: Option<String>,
+    custom_config_file: Option<String>,
+    ignore_config: bool,
 ) {
-    list.retain(|s| !s.value.is_empty());
-    let len = list.len();
+    let longest_title = infos
+        .iter()
+        .flat_map(|inner| inner.iter())
+        .map(|s| s.title.len())
+        .max()
+        .unwrap_or(0);
 
-    for (idx, item) in list.clone().iter().enumerate() {
-        let color = get_color_config(
-            format!("color{}", section),
-            use_custom_config,
-            custom_color_config_file.clone(),
-        );
+    let distro_ascii = get_distro_ascii(overriden_ascii.clone());
+    println!(
+        "{}\n",
+        color(distro_ascii, overriden_ascii, 0, ignore_config)
+    );
 
-        let connector = if idx == 0 {
-            "╭─"
-        } else if idx == len - 1 {
-            "╰─"
-        } else {
-            "├─"
-        };
+    for (idx, section) in infos.iter().enumerate() {
+        for (idx2, infoitem) in section.iter().enumerate() {
+            let simple_color = |s| color(s, custom_config_file.clone(), idx + 1, ignore_config);
 
-        println!("{}{}", margin, print_data(item, color, connector));
+            let connector = match idx2 {
+                0 => "╭─",
+                _ if idx2 == section.len() - 1 => "╰─",
+                _ => "├─",
+            }
+            .to_string();
+
+            let alignment_space = " ".repeat(longest_title - infoitem.title.len());
+            let margin_space = " ".repeat(margin as usize);
+
+            println!(
+                "{margin_space}{}{}  {}{alignment_space} {} {}",
+                simple_color(connector),
+                simple_color(infoitem.icon.to_string()),
+                infoitem.title,
+                simple_color("~>".to_string()),
+                (infoitem.value)()
+            );
+        }
+
+        if idx != infos.len() - 1 {
+            println!();
+        }
     }
 }

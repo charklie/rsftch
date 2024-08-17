@@ -1,10 +1,10 @@
 [package]
 name = "rsftch"
-version = "0.6.6"
+version = "0.7.0"
 edition = "2021"
 authors = ["Charklie charliejohanid@gmail.com"]
 license = "MIT"
-description = "Aesthetically pleasing and lightning fast hardware fetch tool written in rust with configuration."
+description = "Aesthetically pleasing and lightning fast hardware fetch tool written in rust with pkl configuration."
 readme = "README.md"
 repository = "https://github.com/charklie/rsftch"
 keywords = ["fetch", "rust", "neofetch"]
@@ -13,8 +13,10 @@ categories = ["command-line-utilities"]
 [dependencies]
 colored = "2.1.0"
 rayon = "1.10.0"
-serde = { version = "1.0.200", features = [ "derive" ] }
-serde_json = "1.0.116"
+dirs = "5.0.1"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0.122"
+regex = "1.10.6"
 
 [package.metadata.packager]
 before-packaging-command = "cargo build --release"

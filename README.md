@@ -1,10 +1,15 @@
-# Rsftch
+<div align="center">
+<h1>Rsftch</h1>
+Fast • Easy to configure • Aesthetically pleasing
+</div>
+
+
 ### Screenshots
 
-![image](https://github.com/charklie/rsftch/assets/157241212/288ab242-7522-4338-b508-ed34db518899)
-![image](https://github.com/charklie/rsftch/assets/157241212/cfbd5626-5fee-4446-8441-02c5440473a3)
+![image](https://github.com/user-attachments/assets/eee9e38c-4656-44b0-98b6-66f8f605316a)
+![image](https://github.com/user-attachments/assets/6e9ef28a-d9b1-40af-ab44-fbab9716b250)
 
-### Ascii supported distros
+### ASCII supported distribrutions
 - Arch Linux
 - Debian
 - Fedora

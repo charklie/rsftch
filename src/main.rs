@@ -36,24 +36,24 @@ fn main() {
     let mut ignore_config: bool = false;
     let mut margin: i8 = 1;
 
-    for count in 0..args.len() {
-        match args[count].to_lowercase().as_str() {
+    for arg in 0..args.len() {
+        match args[arg].to_lowercase().as_str() {
             "-h" | "--help" | "--usage" => return help(),
             "--ignore-config" => ignore_config = true,
             "-v" | "--version" => {
                 return println!("Rsftch {}\nMade by charklie", VERSION.unwrap_or("Unknown"));
             }
             "-m" | "--margin" => {
-                if count + 1 < args.len() {
-                    margin = args[count + 1].parse().unwrap();
+                if arg + 1 < args.len() {
+                    margin = args[arg + 1].parse().unwrap();
                 } else {
                     println!("[{}] Missing argument for margin.\n", "ERROR".red());
                     return help();
                 }
             }
             "-o" | "--override" => {
-                if count + 1 < args.len() && !args[count + 1].starts_with("-") {
-                    overriden_ascii = Some(mem::take(&mut args[count + 1]));
+                if arg + 1 < args.len() && !args[arg + 1].starts_with("-") {
+                    overriden_ascii = Some(mem::take(&mut args[arg + 1]));
                 } else {
                     println!(
                         "[{}] Missing argument for override, showing all possible.",
@@ -63,8 +63,8 @@ fn main() {
                 }
             }
             "--config" => {
-                if count + 1 < args.len() && !args[count + 1].starts_with("-") {
-                    custom_config_file = Some(mem::take(&mut args[count + 1]));
+                if arg + 1 < args.len() && !args[arg + 1].starts_with("-") {
+                    custom_config_file = Some(mem::take(&mut args[arg + 1]));
                 } else {
                     println!(
                         "[{}] Missing argument for custom config file.\n",
@@ -89,14 +89,14 @@ fn main() {
 
 fn get_info_vecs(
     custom_config_file: Option<String>,
-    overriden_ascii: Option<String>,
+    ascii_override: Option<String>,
 ) -> Vec<Vec<InfoItem>> {
     let distro = InfoItem {
         title: "distro",
         icon: "",
         value: Arc::new(move || {
-            os_pretty_name(overriden_ascii.clone(), "NAME")
-                .unwrap_or(uname_s(overriden_ascii.clone()))
+            os_pretty_name(ascii_override.clone(), "NAME")
+                .unwrap_or(uname_s(ascii_override.clone()))
         }),
     };
 

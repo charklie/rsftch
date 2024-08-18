@@ -9,7 +9,7 @@ Fast • Easy to configure • Aesthetically pleasing
 ![image](https://github.com/user-attachments/assets/eee9e38c-4656-44b0-98b6-66f8f605316a)
 ![image](https://github.com/user-attachments/assets/6e9ef28a-d9b1-40af-ab44-fbab9716b250)
 
-### ASCII supported distribrutions
+### ASCII supported distributions
 - Arch Linux
 - Debian
 - Fedora
@@ -47,7 +47,7 @@ Fast • Easy to configure • Aesthetically pleasing
 - `pciutils`
 - `libxrandr`
 - `glibc`
-- Any nerdfont
+- Any nerd font
 
 For NVIDIA cards:
 - `nvidia-smi` (sometimes packaged with `nvidia-utils`)
@@ -78,7 +78,7 @@ make install
 ```
 
 #### DEB file
-There is an .deb file availible in the [releases](https://github.com/charklie/rsftch/releases) section, for [Arch](https://github.com/helixarch/debtap) and Debian / Ubuntu users. 
+There is an .deb file available in the [releases](https://github.com/charklie/rsftch/releases) section, for [Arch](https://github.com/helixarch/debtap) and Debian / Ubuntu users. 
 
 #### Binary
 If you don't have cargo installed you can download the [binary](https://github.com/charklie/rsftch/releases) and move it directly to your `/usr/bin`, although this is very unsafe and should be rarely ever done.
@@ -196,14 +196,14 @@ Configuration file is located at: ~/.config/rsftch/info.json
 ###### NOTE: Timing varies heavily depending on e.g. what package manager your distro uses or how many infos are enabled in the configuration. These times are from my system. (endeavour + pacman + all infos enabled) 
 
 ### Compatability
-Currently Rsftch only works on most GNU/Linux and BSD distributions, at the moment only NetBSD is comfirmed to work fully.
+Currently, Rsftch only works on most GNU/Linux and BSD distributions, at the moment only NetBSD is confirmed to work fully.
 
-### Contribrutions
-All PRs are always welcome, just remember to make sure it works on both NetBSD and Linux, additional Windows and MacOS support is appriciated as that will be coming!
+### Contributions
+All PRs are always welcome, just remember to make sure it works on both NetBSD and Linux, additional Windows and MacOS support is appreciated as that will be coming!
 
 ### Thanks
 Thank you to:
-- [@siris](https://www.github.com/siris) for helping me with omptimizing functions and packaging rsftch for Funtoo Linux.
+- [@siris](https://www.github.com/siris) for helping me with optimizing functions and packaging rsftch for Funtoo Linux.
 - [@0323pin](https://www.github.com/0323pin) for packaging rsftch on pkgsrc and uploading it to [beucismis/awesome-fetch](https://github.com/beucismis/awesome-fetch).
 - [@MasterRoby3](https://www.github.com/MasterRoby3) for fixing `apt` support in packages function.
 
@@ -212,3 +212,6 @@ Thank you to:
 - [ ] PKL configuration (?)
 - [ ] Automatic ASCII generation (this will be delayed until a good figlet implementation is available)
 - [ ] Option to have ASCII on side (?)
+- [ ] MacOS support
+- [ ] Windows support
+- [ ] FreeBSD support

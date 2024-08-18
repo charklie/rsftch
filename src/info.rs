@@ -149,43 +149,58 @@ fn gpu_temp() -> String {
 }
 
 pub(crate) fn gpu_info() -> Result<String, Error> {
-    let output = Command::new("lspci").arg("-nnk").output()?;
+    #[cfg(target_os = "linux")]
+    {
+        let output = Command::new("lspci").arg("-nnk").output()?;
 
-    let stdout = String::from_utf8_lossy(&output.stdout);
-    let reader = BufReader::new(stdout.as_bytes());
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        let reader = BufReader::new(stdout.as_bytes());
 
-    for line in reader.lines() {
-        let line = line?;
-        if let Some(start_index) = line.find("NVIDIA").or_else(|| line.find("AMD")) {
-            let (prefix, prefix_len) = if line.contains("NVIDIA") {
-                ("NVIDIA", "NVIDIA".len())
-            } else if line.contains("AMD") {
-                if line.contains("Radeon") {
-                    ("AMD", "AMD".len())
+        for line in reader.lines() {
+            let line = line?;
+            if let Some(start_index) = line.find("NVIDIA").or_else(|| line.find("AMD")) {
+                let (prefix, prefix_len) = if line.contains("NVIDIA") {
+                    ("NVIDIA", "NVIDIA".len())
+                } else if line.contains("AMD") {
+                    if line.contains("Radeon") {
+                        ("AMD", "AMD".len())
+                    } else {
+                        ("AMD Radeon", "AMD Radeon".len())
+                    }
                 } else {
-                    ("AMD Radeon", "AMD Radeon".len())
-                }
-            } else {
-                let vendor_index = line.find("controller").unwrap_or(0);
-                let vendor_str = &line[..vendor_index];
-                (vendor_str, 0)
-            };
-            let start_index = start_index + prefix_len;
-            let start_index = line[start_index..].find('[').ok_or(Error::new(
-                std::io::ErrorKind::NotFound,
-                "GPU name not found",
-            ))? + start_index
-                + 1;
-            let end_index = line[start_index..].find(']').ok_or(Error::new(
-                std::io::ErrorKind::NotFound,
-                "GPU name not found",
-            ))? + start_index;
-            let gpu_name = &line[start_index..end_index];
-            return Ok(format!("{} {} {}", prefix, gpu_name.trim(), gpu_temp()));
+                    let vendor_index = line.find("controller").unwrap_or(0);
+                    let vendor_str = &line[..vendor_index];
+                    (vendor_str, 0)
+                };
+                let start_index = start_index + prefix_len;
+                let start_index = line[start_index..].find('[').ok_or(Error::new(
+                    std::io::ErrorKind::NotFound,
+                    "GPU name not found",
+                ))? + start_index
+                    + 1;
+                let end_index = line[start_index..].find(']').ok_or(Error::new(
+                    std::io::ErrorKind::NotFound,
+                    "GPU name not found",
+                ))? + start_index;
+                let gpu_name = &line[start_index..end_index];
+                return Ok(format!("{} {} {}", prefix, gpu_name.trim(), gpu_temp()));
+            }
+        }
+
+        Err(Error::new(std::io::ErrorKind::NotFound, "GPU not found"))
+    }
+    #[cfg(target_os = "netbsd")]
+    {
+        let output = Command::new("pcictl").args(&["pci0", "list"]).output()?;
+        let output_str = String::from_utf8_lossy(&output.stdout);
+        let lines: Vec<&str> = output_str.lines().collect();
+
+        if let Some(line) = lines.par_iter().find_any(|&&l| l.contains("VGA display")) {
+            Ok(String::from(*line))
+        } else {
+            Err(Error::new(std::io::ErrorKind::NotFound, "GPU not found"))
         }
     }
-
-    Err(Error::new(std::io::ErrorKind::NotFound, "GPU not found"))
 }
 
 pub(crate) fn disk_usage() -> String {

@@ -47,11 +47,13 @@ Fast • Easy to configure • Aesthetically pleasing
 - `pciutils`
 - `libxrandr`
 - `glibc`
-- `lm-sensors` (sometimes listed as `lm_sensors`)
 - Any nerdfont
 
 For NVIDIA cards:
 - `nvidia-smi` (sometimes packaged with `nvidia-utils`)
+
+Only on linux:
+- `lm-sensors` (sometimes packaged as `lm_sensors`)
 
 ### Installation
 #### Cargo _(recommended)_

@@ -44,7 +44,6 @@ Fast • Easy to configure • Aesthetically pleasing
 - pkg
 
 ### Dependencies
-- `pciutils`
 - `libxrandr`
 - `glibc`
 - Any nerd font
@@ -54,6 +53,7 @@ For NVIDIA cards:
 
 Only on linux:
 - `lm-sensors` (sometimes packaged as `lm_sensors`)
+- `pciutils`
 
 ### Installation
 #### Cargo _(recommended)_

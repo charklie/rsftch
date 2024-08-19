@@ -67,7 +67,6 @@ pub(crate) fn cpu_temp() -> String {
             .unwrap()
             .captures(&*String::from_utf8_lossy(&output_str))
             .map_or_else(|| "N/A".to_string(), |caps| format!("({}°C)", &caps[1]))
-
     }
 
     #[cfg(target_os = "netbsd")]
@@ -199,14 +198,19 @@ pub(crate) fn gpu_info() -> Result<String, Error> {
         let formatted_str = output_str
             .lines()
             .find(|&l| l.contains("VGA display"))
-            .and_then(|l| l.split_once(':').map(|(_, name)| name.trim().split_at(name.find('(').unwrap_or(0)).0.trim()))
-            .map(|name| name.to_string());
+            .and_then(|l| l.splitn(3, ':').nth(2))
+            .map(|name| {
+                name.trim()
+                    .split_at(name.find('(').unwrap_or(0))
+                    .0
+                    .trim()
+                    .to_string()
+            });
 
         formatted_str
             .map(|name| format!("{} {}", name, gpu_temp()))
             .ok_or_else(|| Error::new(std::io::ErrorKind::NotFound, "GPU not found"))
     }
-
 }
 
 pub(crate) fn disk_usage() -> String {
@@ -720,20 +724,40 @@ pub(crate) fn mem() -> String {
     if let Ok(file) = File::open("/proc/meminfo") {
         let reader = BufReader::new(file);
         let mut mem_total: u64 = 0;
-        let mut mem_available: u64 = 0;
 
-        for line in reader.lines() {
-            if let Ok(line) = line {
-                if line.starts_with("MemTotal:") {
-                    mem_total = parse_meminfo_value(&line);
-                } else if line.starts_with("MemAvailable:") {
-                    mem_available = parse_meminfo_value(&line);
+        #[cfg(target_os = "linux")]
+        {
+            let mut mem_available: u64 = 0;
+            for line in reader.lines() {
+                if let Ok(line) = line {
+                    if line.starts_with("MemTotal:") {
+                        mem_total = parse_meminfo_value(&line);
+                    } else if line.starts_with("MemAvailable:") {
+                        mem_available = parse_meminfo_value(&line);
+                    }
                 }
             }
+
+            let used = mem_total - mem_available;
+            return format!("{:.2} GiB / {:.2} GiB", kb_to_gb(used), kb_to_gb(mem_total));
         }
 
-        let used = mem_total - mem_available;
-        return format!("{:.2} GiB / {:.2} GiB", kb_to_gb(used), kb_to_gb(mem_total));
+        #[cfg(target_os = "netbsd")]
+        {
+            let mut mem_free: u64 = 0;
+            for line in reader.lines() {
+                if let Ok(line) = line {
+                    if line.starts_with("MemTotal:") {
+                        mem_total = parse_meminfo_value(&line);
+                    } else if line.starts_with("MemAvailable:") || line.starts_with("MemFree:") {
+                        mem_free = parse_meminfo_value(&line);
+                    }
+                }
+            }
+
+            let used = mem_total - mem_free;
+            return format!("{:.2} GiB / {:.2} GiB", kb_to_gb(used), kb_to_gb(mem_total));
+        }
     }
 
     String::new()

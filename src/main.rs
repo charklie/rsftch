@@ -232,9 +232,7 @@ fn color(
         eprintln!("[{}] Not the same amount of info sections as colors, make sure that there is one more color than there are info sections, or try using an example listed in the \"example/\" folder in the github repository.", "ERROR".red());
     }
 
-    ascii
-        .color(colors[idx])
-        .to_string()
+    ascii.color(colors[idx]).to_string()
 }
 
 fn print_info(

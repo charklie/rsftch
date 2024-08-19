@@ -198,7 +198,7 @@ pub(crate) fn gpu_info() -> Result<String, Error> {
         let formatted_str = output_str
             .lines()
             .find(|&l| l.contains("VGA display"))
-            .and_then(|l| l.splitn(3, ':').nth(2))
+            .and_then(|l| l.rsplitn(2, ':').next())
             .map(|name| {
                 name.trim()
                     .split_at(name.find('(').unwrap_or(0))

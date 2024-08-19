@@ -212,6 +212,7 @@ Thank you to:
 - [ ] PKL configuration (?)
 - [ ] Automatic ASCII generation (this will be delayed until a good figlet implementation is available)
 - [ ] Option to have ASCII on side (?)
+- [ ] Rewrite & clean up `packs` function
 - [ ] MacOS support
 - [ ] Windows support
 - [ ] FreeBSD support

@@ -1,5 +1,4 @@
 use rayon::prelude::*;
-use regex::Regex;
 use std::{
     env,
     fs::{self, read_to_string, File},
@@ -9,6 +8,9 @@ use std::{
     sync::{Arc, Mutex},
     time::Duration,
 };
+
+#[cfg(target_os = "linux")]
+use regex::Regex;
 
 pub(crate) fn help() {
     println!(
@@ -193,14 +195,18 @@ pub(crate) fn gpu_info() -> Result<String, Error> {
     {
         let output = Command::new("pcictl").args(&["pci0", "list"]).output()?;
         let output_str = String::from_utf8_lossy(&output.stdout);
-        let lines: Vec<&str> = output_str.lines().collect();
 
-        if let Some(line) = lines.par_iter().find_any(|&&l| l.contains("VGA display")) {
-            Ok(String::from(*line))
-        } else {
-            Err(Error::new(std::io::ErrorKind::NotFound, "GPU not found"))
-        }
+        let formatted_str = output_str
+            .lines()
+            .find(|&l| l.contains("VGA display"))
+            .and_then(|l| l.split_once(':').map(|(_, name)| name.trim().split_at(name.find('(').unwrap_or(0)).0.trim()))
+            .map(|name| name.to_string());
+
+        formatted_str
+            .map(|name| format!("{} {}", name, gpu_temp()))
+            .ok_or_else(|| Error::new(std::io::ErrorKind::NotFound, "GPU not found"))
     }
+
 }
 
 pub(crate) fn disk_usage() -> String {
@@ -549,7 +555,7 @@ pub(crate) fn packages() -> String {
                             .ok()
                             .and_then(|count_str| count_str.trim().parse::<i16>().ok())
                         {
-                            packs_numbers.lock().unwrap().push(count)
+                            packs_numbers.lock().unwrap().push(count - 1)
                         }
                     });
                 }
@@ -664,9 +670,9 @@ fn search_file(custom_paths: Vec<&'static str>, search_variable: &str) -> Option
     None
 }
 
-pub(crate) fn os_pretty_name(overriden_ascii: Option<String>, identifier: &str) -> Option<String> {
-    if overriden_ascii.is_some() {
-        return overriden_ascii;
+pub(crate) fn os_pretty_name(ascii_override: Option<String>, identifier: &str) -> Option<String> {
+    if ascii_override.is_some() {
+        return ascii_override;
     }
 
     search_file(vec!["/etc/os-release", "/etc/lsb-release"], identifier)
@@ -741,9 +747,9 @@ pub(crate) fn uname_r() -> String {
     String::from_utf8_lossy(&output.stdout).trim().to_string()
 }
 
-pub(crate) fn uname_s(overriden_ascii: Option<String>) -> String {
-    if overriden_ascii.is_some() {
-        return overriden_ascii.unwrap_or_else(|| String::new());
+pub(crate) fn uname_s(ascii_override: Option<String>) -> String {
+    if ascii_override.is_some() {
+        return ascii_override.unwrap_or_else(|| String::new());
     }
     let output = Command::new("uname")
         .arg("-s")

@@ -66,7 +66,7 @@ pub(crate) fn cpu_temp() -> String {
         Regex::new(r"Package id 0:\s+\+(\d+\.\d+)°C")
             .unwrap()
             .captures(&*String::from_utf8_lossy(&output_str))
-            .map_or_else(|| "N/A".to_string(), |caps| format!("({}°C)", &caps[1]))
+            .map_or_else(|| String::from("(N/A)"), |caps| format!("({}°C)", &caps[1]))
     }
 
     #[cfg(target_os = "netbsd")]
@@ -85,7 +85,7 @@ pub(crate) fn cpu_temp() -> String {
                     .and_then(|temp_str| temp_str.parse::<f64>().ok())
                     .map(|temp| format!("({:.1}°C)", temp))
             })
-            .unwrap_or_default()
+            .unwrap_or(String::from("(N/A)"))
     }
 }
 
@@ -125,7 +125,7 @@ fn gpu_temp() -> String {
                             })
                             .map(|temp| format!("({:.1}°C)", temp))
                     })
-                    .unwrap_or_default()
+                    .unwrap_or(String::from("(N/A)"))
             })
     }
 
@@ -145,7 +145,7 @@ fn gpu_temp() -> String {
                     .and_then(|temp_str| temp_str.parse::<f64>().ok())
                     .map(|temp| format!("({:.1}°C)", temp))
             })
-            .unwrap_or_default()
+            .unwrap_or(String::from("(N/A)"))
     }
 }
 
@@ -255,14 +255,14 @@ pub(crate) fn cpu_info() -> String {
         }
     }
 
-    format!(
-        "{}{}",
-        &cpu.split('@').next().unwrap_or_default(),
-        cpu_temp()
-    )
+    if cpu.is_empty() {
+        cpu = String::from("Unknown ");
+    }
+
+    format!("{}{}", &cpu.split('@').next().unwrap(), cpu_temp())
 }
 
-fn package_managers() -> Vec<&'static str> {
+fn package_managers() -> Vec<String> {
     let possible_managers = vec![
         "xbps-query",
         "dnf",
@@ -276,318 +276,94 @@ fn package_managers() -> Vec<&'static str> {
         "pkg_info",
         "pkg",
     ];
-    let installed_managers: Arc<Mutex<Vec<&'static str>>> = Arc::new(Mutex::new(Vec::new()));
-    possible_managers.par_iter().for_each(|manager| {
-        let version_command = match *manager {
-            "pkg_info" => "-V",
-            "emerge" => "--help",
-            _ => "--version",
-        };
 
-        if let Ok(result) = Command::new(manager).arg(version_command).output() {
-            if result.status.success() {
-                installed_managers.lock().unwrap().push(manager);
+    possible_managers
+        .par_iter()
+        .filter_map(|manager| {
+            let version_command = match *manager {
+                "pkg_info" => "-V",
+                "emerge" => "--help",
+                _ => "--version",
+            };
+
+            if let Ok(result) = Command::new(manager).arg(version_command).output() {
+                if result.status.success() {
+                    Some(manager.to_string())
+                } else {
+                    None
+                }
+            } else {
+                None
             }
-        }
-    });
+        })
+        .collect()
+}
 
-    let vec_managers = installed_managers.lock().unwrap().to_vec();
-    vec_managers
+fn count_packages(manager: &str, args: &[&str], stdin_cmd: Option<&str>) -> Option<i16> {
+    let output = if let Some(stdin_cmd) = stdin_cmd {
+        Command::new(stdin_cmd)
+            .args(args)
+            .stdout(Stdio::piped())
+            .spawn()
+            .and_then(|child| {
+                Command::new("wc")
+                    .args(["-l"])
+                    .stdin(child.stdout.unwrap())
+                    .output()
+            })
+    } else {
+        Command::new(manager)
+            .args(args)
+            .stdout(Stdio::piped())
+            .spawn()
+            .and_then(|child| {
+                Command::new("wc")
+                    .args(["-l"])
+                    .stdin(child.stdout.unwrap())
+                    .output()
+            })
+    };
+
+    output.ok().and_then(|output| {
+        output.status.success().then(|| {
+            String::from_utf8(output.stdout)
+                .ok()
+                .and_then(|count_str| count_str.trim().parse::<i16>().ok())
+        })
+    })?
 }
 
 pub(crate) fn packages() -> String {
     let installed_managers = package_managers();
     let packs_numbers: Arc<Mutex<Vec<i16>>> = Arc::new(Mutex::new(Vec::new()));
     installed_managers.par_iter().for_each(|manager| {
-        match *manager {
-            "xbps-query" => {
-                //xpbs-query -l
-                if let Ok(output) = Command::new(*manager)
-                    .args(["-l"])
-                    .stdout(Stdio::piped())
-                    .spawn()
-                    .and_then(|child| {
-                        Command::new("wc")
-                            .args(["-l"])
-                            .stdin(child.stdout.unwrap())
-                            .output()
-                    })
-                {
-                    output.status.success().then(|| {
-                        if let Some(count) = String::from_utf8(output.stdout)
-                            .ok()
-                            .and_then(|count_str| count_str.trim().parse::<i16>().ok())
-                        {
-                            packs_numbers.lock().unwrap().push(count)
-                        }
-                    });
-                }
-            }
-            "dnf" => {
-                // dnf list installed
-                if let Ok(output) = Command::new(*manager)
-                    .args(["list", "installed"])
-                    .stdout(Stdio::piped())
-                    .spawn()
-                    .and_then(|child| {
-                        Command::new("wc")
-                            .args(["-l"])
-                            .stdin(child.stdout.unwrap())
-                            .output()
-                    })
-                {
-                    output.status.success().then(|| {
-                        if let Some(count) = String::from_utf8(output.stdout)
-                            .ok()
-                            .and_then(|count_str| count_str.trim().parse::<i16>().ok())
-                        {
-                            packs_numbers.lock().unwrap().push(count)
-                        }
-                    });
-                }
-            }
-            "rpm" => {
-                // rpm -qa --last
-                if let Ok(output) = Command::new(*manager)
-                    .args(["-qa", "--last"])
-                    .stdout(Stdio::piped())
-                    .spawn()
-                    .and_then(|child| {
-                        Command::new("wc")
-                            .args(["-l"])
-                            .stdin(child.stdout.unwrap())
-                            .output()
-                    })
-                {
-                    output.status.success().then(|| {
-                        if let Some(count) = String::from_utf8(output.stdout)
-                            .ok()
-                            .and_then(|count_str| count_str.trim().parse::<i16>().ok())
-                        {
-                            packs_numbers.lock().unwrap().push(count)
-                        }
-                    });
-                }
-            }
-            "apt" => {
-                // dpkg --get-selections | grep -w install
-                if let Ok(output) = Command::new("dpkg")
-                    .args(["--get-selections"])
-                    .stdout(Stdio::piped())
-                    .spawn()
-                    .and_then(|child| {
-                        Command::new("grep")
-                            .args(["-w", "install"])
-                            .stdout(Stdio::piped())
-                            .stdin(child.stdout.unwrap())
-                            .spawn()
-                            .and_then(|child| {
-                                Command::new("wc")
-                                    .args(["-l"])
-                                    .stdin(child.stdout.unwrap())
-                                    .output()
-                            })
-                    })
-                {
-                    output.status.success().then(|| {
-                        if let Some(count) = String::from_utf8(output.stdout)
-                            .ok()
-                            .and_then(|count_str| count_str.trim().parse::<i16>().ok())
-                        {
-                            packs_numbers.lock().unwrap().push(count)
-                        }
-                    });
-                }
-            }
-            "pacman" => {
-                // pacman -Q
-                if let Ok(output) = Command::new(*manager)
-                    .args(["-Q"])
-                    .stdout(Stdio::piped())
-                    .spawn()
-                    .and_then(|child| {
-                        Command::new("wc")
-                            .args(["-l"])
-                            .stdin(child.stdout.unwrap())
-                            .output()
-                    })
-                {
-                    output.status.success().then(|| {
-                        if let Some(count) = String::from_utf8(output.stdout)
-                            .ok()
-                            .and_then(|count_str| count_str.trim().parse::<i16>().ok())
-                        {
-                            packs_numbers.lock().unwrap().push(count)
-                        }
-                    });
-                }
-            }
+        let count = match manager.as_str() {
+            "xbps-query" => count_packages(manager, &["-l"], None),
+            "dnf" => count_packages(manager, &["list", "installed"], None),
+            "rpm" => count_packages(manager, &["-qa", "--last"], None),
+            "apt" => count_packages("dpkg", &["--get-selections"], Some("grep -w install")),
+            "pacman" => count_packages(manager, &["-Q"], None),
+            "yum" => count_packages(manager, &["list", "installed"], None),
+            "zypper" => count_packages(manager, &["se"], None),
+            "apk" => count_packages(manager, &["list", "--installed"], None),
+            "pkg_info" => count_packages("ls", &["/usr/pkg/pkgdb/"], None).map(|x| x - 1),
+            "pkg" => count_packages("pkg", &["info"], None),
             "emerge" => {
-                // qlist -I
                 if os_pretty_name(None, "ID")
-                    .unwrap_or("".to_string())
+                    .unwrap_or_default()
                     .to_ascii_lowercase()
                     .contains("funtoo")
                 {
-                    if let Ok(output) = Command::new("find")
-                        .args(["/var/db/pkg/"])
-                        .args(["-name"])
-                        .args(["PF"])
-                        .stdout(Stdio::piped())
-                        .spawn()
-                        .and_then(|child| {
-                            Command::new("wc")
-                                .args(["-l"])
-                                .stdin(child.stdout.unwrap())
-                                .output()
-                        })
-                    {
-                        output.status.success().then(|| {
-                            if let Some(count) = String::from_utf8(output.stdout)
-                                .ok()
-                                .and_then(|count_str| count_str.trim().parse::<i16>().ok())
-                            {
-                                packs_numbers.lock().unwrap().push(count)
-                            }
-                        });
-                    }
-                } else if let Ok(output) = Command::new(*manager)
-                    .args(["-I"])
-                    .stdout(Stdio::piped())
-                    .spawn()
-                    .and_then(|child| {
-                        Command::new("wc")
-                            .args(["-l"])
-                            .stdin(child.stdout.unwrap())
-                            .output()
-                    })
-                {
-                    output.status.success().then(|| {
-                        if let Some(count) = String::from_utf8(output.stdout)
-                            .ok()
-                            .and_then(|count_str| count_str.trim().parse::<i16>().ok())
-                        {
-                            packs_numbers.lock().unwrap().push(count)
-                        }
-                    });
+                    count_packages("find", &["/var/db/pkg/", "-name", "PF"], None)
+                } else {
+                    count_packages(manager, &["-I"], None)
                 }
             }
-            "yum" => {
-                // yum list installed
-                if let Ok(output) = Command::new(*manager)
-                    .args(["list", "installed"])
-                    .stdout(Stdio::piped())
-                    .spawn()
-                    .and_then(|child| {
-                        Command::new("wc")
-                            .args(["-l"])
-                            .stdin(child.stdout.unwrap())
-                            .output()
-                    })
-                {
-                    output.status.success().then(|| {
-                        if let Some(count) = String::from_utf8(output.stdout)
-                            .ok()
-                            .and_then(|count_str| count_str.trim().parse::<i16>().ok())
-                        {
-                            packs_numbers.lock().unwrap().push(count)
-                        }
-                    });
-                }
-            }
-            "zypper" => {
-                //zypper se
-                if let Ok(output) = Command::new(*manager)
-                    .args(["se"])
-                    .stdout(Stdio::piped())
-                    .spawn()
-                    .and_then(|child| {
-                        Command::new("wc")
-                            .args(["-l"])
-                            .stdin(child.stdout.unwrap())
-                            .output()
-                    })
-                {
-                    output.status.success().then(|| {
-                        if let Some(count) = String::from_utf8(output.stdout)
-                            .ok()
-                            .and_then(|count_str| count_str.trim().parse::<i16>().ok())
-                        {
-                            packs_numbers.lock().unwrap().push(count)
-                        }
-                    });
-                }
-            }
-            "apk" => {
-                // apk list --installed
-                if let Ok(output) = Command::new(*manager)
-                    .args(["list", "--installed"])
-                    .stdout(Stdio::piped())
-                    .spawn()
-                    .and_then(|child| {
-                        Command::new("wc")
-                            .args(["-l"])
-                            .stdin(child.stdout.unwrap())
-                            .output()
-                    })
-                {
-                    output.status.success().then(|| {
-                        if let Some(count) = String::from_utf8(output.stdout)
-                            .ok()
-                            .and_then(|count_str| count_str.trim().parse::<i16>().ok())
-                        {
-                            packs_numbers.lock().unwrap().push(count)
-                        }
-                    });
-                }
-            }
-            "pkg_info" => {
-                // ls /usr/pkg/pkgdb/
-                if let Ok(output) = Command::new("ls")
-                    .args(["/usr/pkg/pkgdb/"])
-                    .stdout(Stdio::piped())
-                    .spawn()
-                    .and_then(|child| {
-                        Command::new("wc")
-                            .args(["-l"])
-                            .stdin(child.stdout.unwrap())
-                            .output()
-                    })
-                {
-                    output.status.success().then(|| {
-                        if let Some(count) = String::from_utf8(output.stdout)
-                            .ok()
-                            .and_then(|count_str| count_str.trim().parse::<i16>().ok())
-                        {
-                            packs_numbers.lock().unwrap().push(count - 1)
-                        }
-                    });
-                }
-            }
-            "pkg" => {
-                // pkg info
-                if let Ok(output) = Command::new("pkg")
-                    .args(["info"])
-                    .stdout(Stdio::piped())
-                    .spawn()
-                    .and_then(|child| {
-                        Command::new("wc")
-                            .args(["-l"])
-                            .stdin(child.stdout.unwrap())
-                            .output()
-                    })
-                {
-                    output.status.success().then(|| {
-                        if let Some(count) = String::from_utf8(output.stdout)
-                            .ok()
-                            .and_then(|count_str| count_str.trim().parse::<i16>().ok())
-                        {
-                            packs_numbers.lock().unwrap().push(count)
-                        }
-                    });
-                }
-            }
-            _ => {}
+            _ => None,
+        };
+
+        if let Some(count) = count {
+            packs_numbers.lock().unwrap().push(count);
         }
     });
 
@@ -640,23 +416,20 @@ pub(crate) fn uptime() -> Result<String, Error> {
 
 fn format_duration(duration: Duration) -> String {
     let seconds = duration.as_secs();
-    let days = seconds / (24 * 3600);
-    let hours = (seconds / 3600) % 24;
-    let minutes = (seconds / 60) % 60;
-    let seconds = seconds % 60;
+    let mut values = vec![
+        (seconds / (24 * 3600), "days"),
+        ((seconds % (24 * 3600)) / 3600, "hours"),
+        ((seconds % 3600) / 60, "minutes"),
+        (seconds % 60, "seconds"),
+    ];
 
-    let mut uptime_string = String::new();
-    if days > 0 {
-        uptime_string.push_str(&format!("{} days, ", days));
-    }
-    if hours > 0 {
-        uptime_string.push_str(&format!("{} hours, ", hours));
-    }
-    if minutes > 0 {
-        uptime_string.push_str(&format!("{} minutes, ", minutes));
-    }
-    uptime_string.push_str(&format!("{} seconds", seconds));
-    uptime_string.trim_end_matches(", ").to_string()
+    values.retain(|&(value, _)| value > 0);
+
+    values
+        .iter()
+        .map(|&(value, unit)| format!("{} {}", value, unit))
+        .collect::<Vec<_>>()
+        .join(", ")
 }
 
 fn search_file(custom_paths: Vec<&'static str>, search_variable: &str) -> Option<String> {
@@ -707,13 +480,14 @@ pub(crate) fn wm() -> String {
             }
         }
     }
-    String::new()
+
+    String::from("N/A")
 }
 
 pub(crate) fn mem() -> String {
     let kb_to_gb = |kilobytes: u64| kilobytes as f64 / (1024.0 * 1024.0);
 
-    let parse_meminfo_value = |line: &str| {
+    let parse_memory_value = |line: &str| {
         line.split_whitespace()
             .nth(1)
             .unwrap_or("0")
@@ -731,9 +505,9 @@ pub(crate) fn mem() -> String {
             for line in reader.lines() {
                 if let Ok(line) = line {
                     if line.starts_with("MemTotal:") {
-                        mem_total = parse_meminfo_value(&line);
+                        mem_total = parse_memory_value(&line);
                     } else if line.starts_with("MemAvailable:") {
-                        mem_available = parse_meminfo_value(&line);
+                        mem_available = parse_memory_value(&line);
                     }
                 }
             }
@@ -760,33 +534,18 @@ pub(crate) fn mem() -> String {
         }
     }
 
-    String::new()
+    String::from("N/A")
 }
 
-pub(crate) fn uname_r() -> String {
-    let output = Command::new("uname")
-        .arg("-r")
-        .output()
-        .expect("uname failed -r");
-    String::from_utf8_lossy(&output.stdout).trim().to_string()
-}
-
-pub(crate) fn uname_s(ascii_override: Option<String>) -> String {
+pub(crate) fn uname(arg: &str, ascii_override: Option<String>) -> String {
     if ascii_override.is_some() {
-        return ascii_override.unwrap_or_else(|| String::new());
+        return ascii_override.unwrap();
     }
-    let output = Command::new("uname")
-        .arg("-s")
-        .output()
-        .expect("uname failed -s");
-    String::from_utf8_lossy(&output.stdout).trim().to_string()
-}
 
-pub(crate) fn uname_n() -> String {
     let output = Command::new("uname")
-        .arg("-n")
+        .arg(arg)
         .output()
-        .expect("uname failed -n");
+        .expect(format!("`uname` failed {arg}, this should not happen.").as_str());
     String::from_utf8_lossy(&output.stdout).trim().to_string()
 }
 
@@ -797,5 +556,5 @@ pub(crate) fn shell_name() -> String {
 }
 
 pub(crate) fn terminal() -> String {
-    env::var("TERM").unwrap_or("".to_string())
+    env::var("TERM").unwrap_or("N/A".to_string())
 }

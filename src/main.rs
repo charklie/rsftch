@@ -31,7 +31,7 @@ impl Clone for InfoItem {
 
 fn main() {
     let mut args: Vec<String> = env::args().collect();
-    let mut overriden_ascii: Option<String> = None;
+    let mut ascii_override: Option<String> = None;
     let mut custom_config_file: Option<String> = None;
     let mut ignore_config: bool = false;
     let mut margin: i8 = 1;
@@ -53,7 +53,7 @@ fn main() {
             }
             "-o" | "--override" => {
                 if arg + 1 < args.len() && !args[arg + 1].starts_with("-") {
-                    overriden_ascii = Some(mem::take(&mut args[arg + 1]));
+                    ascii_override = Some(mem::take(&mut args[arg + 1]));
                 } else {
                     println!(
                         "[{}] Missing argument for override, showing all possible.",
@@ -77,11 +77,11 @@ fn main() {
         };
     }
 
-    let infoitems = get_info_vecs(custom_config_file.clone(), overriden_ascii.clone());
+    let infoitems = get_info_vecs(custom_config_file.clone(), ascii_override.clone());
     print_info(
         infoitems,
         margin,
-        overriden_ascii,
+        ascii_override,
         custom_config_file,
         ignore_config,
     );
@@ -96,14 +96,14 @@ fn get_info_vecs(
         icon: "",
         value: Arc::new(move || {
             os_pretty_name(ascii_override.clone(), "NAME")
-                .unwrap_or(uname_s(ascii_override.clone()))
+                .unwrap_or(uname("-s", ascii_override.clone()))
         }),
     };
 
     let hostname = InfoItem {
         title: "host",
         icon: "󱩛",
-        value: Arc::new(move || uname_n()),
+        value: Arc::new(move || uname("-n", None)),
     };
 
     let shell = InfoItem {
@@ -115,7 +115,7 @@ fn get_info_vecs(
     let kernel = InfoItem {
         title: "kernel",
         icon: "",
-        value: Arc::new(move || uname_r()),
+        value: Arc::new(move || uname("-r", None)),
     };
 
     let packs = InfoItem {
@@ -238,7 +238,7 @@ fn color(
 fn print_info(
     infos: Vec<Vec<InfoItem>>,
     margin: i8,
-    overriden_ascii: Option<String>,
+    ascii_override: Option<String>,
     custom_config_file: Option<String>,
     ignore_config: bool,
 ) {
@@ -249,10 +249,10 @@ fn print_info(
         .max()
         .unwrap_or(0);
 
-    let distro_ascii = get_distro_ascii(overriden_ascii.clone());
+    let distro_ascii = get_distro_ascii(ascii_override.clone());
     println!(
         "{}\n",
-        color(distro_ascii, overriden_ascii, 0, ignore_config)
+        color(distro_ascii, ascii_override, 0, ignore_config)
     );
 
     for (idx, section) in infos.iter().enumerate() {

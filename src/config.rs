@@ -30,10 +30,14 @@ fn default_json() -> String {
     .to_string()
 }
 
+fn fetch_json(custom_config_file: Option<String>, configuration_part: &str) -> Info {
+    let json_path = fetch_json_path(custom_config_file.clone());
+    let contents = fs::read_to_string(json_path).unwrap_or(default_json());
+    serde_json::from_str(&contents).expect(format!("The {configuration_part} configuration is not valid, please read the README for further information or use an example listed in the \"example/\" folder in the github repository.").as_str())
+}
+
 pub(crate) fn parse_json_to_vec(custom_config_file: Option<String>) -> Vec<Vec<String>> {
-    let contents =
-        fs::read_to_string(fetch_json_path(custom_config_file)).unwrap_or(default_json());
-    let info: Info = serde_json::from_str(&contents).expect("The info configuration is not valid, please read the README for further information or use an example listed in the \"example/\" folder in the github repository.");
+    let info = fetch_json(custom_config_file, "info");
 
     info.info
         .iter()
@@ -46,9 +50,7 @@ pub(crate) fn get_colors(custom_config_file: Option<String>, ignore_config: bool
         return vec![Color::Red, Color::Green, Color::Blue, Color::Magenta];
     }
 
-    let contents =
-        fs::read_to_string(fetch_json_path(custom_config_file)).unwrap_or(default_json());
-    let info: Info = serde_json::from_str(&contents).expect("The color configuration is not valid, please read the README for further information or use an example listed in the \"example/\" folder in the github repository.");
+    let info = fetch_json(custom_config_file, "color");
 
     info.color
         .iter()

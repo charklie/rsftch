@@ -189,7 +189,7 @@ Configuration file is located at: ~/.config/rsftch/info.json
 ```
 
 ### Time comparison
-- Rsftch: 45.12 milliseconds (all infos enabled)
+- Rsftch: 47.31 milliseconds (all infos enabled)
 - Neofetch: 137.43 milliseconds
 - Screenfetch: 767.8 milliseconds
 
@@ -209,10 +209,9 @@ Thank you to:
 
 ### Todo
 - [X] Add support for more info sections
-- [ ] PKL configuration (?)
 - [ ] Automatic ASCII generation (this will be delayed until a good figlet implementation is available)
 - [ ] Option to have ASCII on side (?)
-- [ ] Rewrite & clean up `packs` function
+- [X] Rewrite & clean up `packs` function
 - [ ] MacOS support
 - [ ] Windows support
 - [ ] FreeBSD support

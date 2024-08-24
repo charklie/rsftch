@@ -10,7 +10,7 @@ use std::{
 };
 
 #[cfg(target_os = "linux")]
-use regex::Regex;
+use {once_cell::sync::Lazy, regex::Regex, std::collections::HashSet};
 
 pub(crate) fn help() {
     println!(
@@ -61,12 +61,15 @@ pub(crate) fn timezone() -> String {
 pub(crate) fn cpu_temp() -> String {
     #[cfg(target_os = "linux")]
     {
-        let output_str = Command::new("sensors").output().unwrap().stdout;
+        static REGEX: Lazy<Regex> =
+            Lazy::new(|| Regex::new(r"Package id 0:\s+\+(\d+\.\d+)°C").unwrap());
 
-        Regex::new(r"Package id 0:\s+\+(\d+\.\d+)°C")
-            .unwrap()
-            .captures(&*String::from_utf8_lossy(&output_str))
-            .map_or_else(|| String::from("(N/A)"), |caps| format!("({}°C)", &caps[1]))
+        let output = Command::new("sensors").output().unwrap();
+        let output_str = String::from_utf8_lossy(&output.stdout);
+
+        REGEX
+            .captures(&output_str)
+            .map_or_else(|| "(N/A)".to_string(), |caps| format!("({}°C)", &caps[1]))
     }
 
     #[cfg(target_os = "netbsd")]
@@ -238,28 +241,35 @@ pub(crate) fn disk_usage() -> String {
 }
 
 pub(crate) fn cpu_info() -> String {
-    let cpuinfo_file = read_to_string("/proc/cpuinfo").expect("Failed to read /proc/cpuinfo");
-    let mut cpu = String::new();
+    let cpuinfo_file = match read_to_string("/proc/cpuinfo") {
+        Ok(content) => content,
+        Err(_) => return format!("N/A {}", cpu_temp()),
+    };
+
+    let keys: HashSet<&str> = [
+        "model name",
+        "Hardware",
+        "Processor",
+        "^cpu model",
+        "chip type",
+        "^cpu type",
+    ]
+    .iter()
+    .cloned()
+    .collect();
 
     for line in cpuinfo_file.lines() {
-        let parts: Vec<&str> = line.split(": ").map(|s| s.trim()).collect();
-        if parts.len() == 2 {
-            match parts[0] {
-                "model name" | "Hardware" | "Processor" | "^cpu model" | "chip type"
-                | "^cpu type" => {
-                    cpu = parts[1].to_string();
-                    break;
-                }
-                _ => {}
+        if let Some(pos) = line.find(": ") {
+            let key = &line[..pos];
+            let value = &line[pos + 2..].trim();
+
+            if keys.contains(&key.trim()) {
+                return format!("{}{}", value.split('@').next().unwrap_or(value), cpu_temp());
             }
         }
     }
 
-    if cpu.is_empty() {
-        cpu = String::from("Unknown ");
-    }
-
-    format!("{}{}", &cpu.split('@').next().unwrap(), cpu_temp())
+    format!("N/A {}", cpu_temp())
 }
 
 fn package_managers() -> Vec<String> {
@@ -286,12 +296,13 @@ fn package_managers() -> Vec<String> {
                 _ => "--version",
             };
 
-            if let Ok(result) = Command::new(manager).arg(version_command).output() {
-                if result.status.success() {
-                    Some(manager.to_string())
-                } else {
-                    None
-                }
+            if Command::new(manager)
+                .arg(version_command)
+                .output()
+                .ok()
+                .map_or(false, |result| result.status.success())
+            {
+                Some(manager.to_string())
             } else {
                 None
             }
@@ -325,17 +336,20 @@ fn count_packages(manager: &str, args: &[&str], stdin_cmd: Option<&str>) -> Opti
     };
 
     output.ok().and_then(|output| {
-        output.status.success().then(|| {
+        if output.status.success() {
             String::from_utf8(output.stdout)
                 .ok()
                 .and_then(|count_str| count_str.trim().parse::<i16>().ok())
-        })
-    })?
+        } else {
+            None
+        }
+    })
 }
 
 pub(crate) fn packages() -> String {
     let installed_managers = package_managers();
-    let packs_numbers: Arc<Mutex<Vec<i16>>> = Arc::new(Mutex::new(Vec::new()));
+    let packs_numbers = Arc::new(Mutex::new(Vec::new()));
+
     installed_managers.par_iter().for_each(|manager| {
         let count = match manager.as_str() {
             "xbps-query" => count_packages(manager, &["-l"], None),

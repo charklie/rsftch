@@ -255,32 +255,41 @@ fn print_info(
         color(distro_ascii, ascii_override, 0, ignore_config)
     );
 
-    for (idx, section) in infos.iter().enumerate() {
-        for (idx2, infoitem) in section.iter().enumerate() {
-            let simple_color = |s| color(s, custom_config_file.clone(), idx + 1, ignore_config);
+    infos
+        .clone()
+        .into_iter()
+        .enumerate()
+        .for_each(|(idx, section)| {
+            section
+                .clone()
+                .into_iter()
+                .enumerate()
+                .for_each(|(idx2, infoitem)| {
+                    let simple_color =
+                        |s| color(s, custom_config_file.clone(), idx + 1, ignore_config);
 
-            let connector = match idx2 {
-                0 => "╭─",
-                _ if idx2 == section.len() - 1 => "╰─",
-                _ => "├─",
+                    let connector = match idx2 {
+                        0 => "╭─",
+                        _ if idx2 == section.len() - 1 => "╰─",
+                        _ => "├─",
+                    }
+                    .to_string();
+
+                    let alignment_space = " ".repeat(longest_title - infoitem.title.len());
+                    let margin_space = " ".repeat(margin as usize);
+
+                    println!(
+                        "{margin_space}{}{}  {}{alignment_space} {} {}",
+                        simple_color(connector),
+                        simple_color(infoitem.icon.to_string()),
+                        infoitem.title,
+                        simple_color("~>".to_string()),
+                        (infoitem.value)()
+                    );
+                });
+
+            if idx != infos.len() - 1 {
+                println!();
             }
-            .to_string();
-
-            let alignment_space = " ".repeat(longest_title - infoitem.title.len());
-            let margin_space = " ".repeat(margin as usize);
-
-            println!(
-                "{margin_space}{}{}  {}{alignment_space} {} {}",
-                simple_color(connector),
-                simple_color(infoitem.icon.to_string()),
-                infoitem.title,
-                simple_color("~>".to_string()),
-                (infoitem.value)()
-            );
-        }
-
-        if idx != infos.len() - 1 {
-            println!();
-        }
-    }
+        });
 }

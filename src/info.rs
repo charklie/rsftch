@@ -7,10 +7,11 @@ use std::{
     process::{Command, Stdio},
     sync::{Arc, Mutex},
     time::Duration,
+    collections::HashSet
 };
 
 #[cfg(target_os = "linux")]
-use {once_cell::sync::Lazy, regex::Regex, std::collections::HashSet};
+use {once_cell::sync::Lazy, regex::Regex};
 
 pub(crate) fn help() {
     println!(
@@ -498,16 +499,16 @@ pub(crate) fn wm() -> String {
     String::from("N/A")
 }
 
+fn parse_memory_value(line: &str) -> u64 {
+    line.split_whitespace()
+        .nth(1)
+        .unwrap_or("0")
+        .parse::<u64>()
+        .unwrap_or(0)
+}
+
 pub(crate) fn mem() -> String {
     let kb_to_gb = |kilobytes: u64| kilobytes as f64 / (1024.0 * 1024.0);
-
-    let parse_memory_value = |line: &str| {
-        line.split_whitespace()
-            .nth(1)
-            .unwrap_or("0")
-            .parse::<u64>()
-            .unwrap_or(0)
-    };
 
     if let Ok(file) = File::open("/proc/meminfo") {
         let reader = BufReader::new(file);
@@ -536,9 +537,9 @@ pub(crate) fn mem() -> String {
             for line in reader.lines() {
                 if let Ok(line) = line {
                     if line.starts_with("MemTotal:") {
-                        mem_total = parse_meminfo_value(&line);
+                        mem_total = parse_memory_value(&line);
                     } else if line.starts_with("MemAvailable:") || line.starts_with("MemFree:") {
-                        mem_free = parse_meminfo_value(&line);
+                        mem_free = parse_memory_value(&line);
                     }
                 }
             }

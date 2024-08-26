@@ -46,12 +46,12 @@ Fast • Easy to configure • Aesthetically pleasing
 ### Dependencies
 - `libxrandr`
 - `glibc`
-- Any nerd font
+- A nerd font
 
 For NVIDIA cards:
 - `nvidia-smi` (sometimes packaged with `nvidia-utils`)
 
-Only on linux:
+For Linux:
 - `lm-sensors` (sometimes packaged as `lm_sensors`)
 - `pciutils`
 
@@ -213,5 +213,5 @@ Thank you to:
 - [ ] Option to have ASCII on side (?)
 - [X] Rewrite & clean up `packs` function
 - [ ] MacOS support
-- [ ] Windows support
-- [ ] FreeBSD support
+- [ ] Windows support (?)
+- [ ] More BSD support

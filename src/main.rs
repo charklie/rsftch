@@ -163,13 +163,13 @@ fn get_info_vecs(
     let uptime = InfoItem {
         title: "uptime",
         icon: "󰄉",
-        value: Arc::new(move || uptime().unwrap_or_default()),
+        value: Arc::new(move || uptime()),
     };
 
     let gpu = InfoItem {
         title: "gpu",
         icon: "󰍹",
-        value: Arc::new(move || gpu_info().unwrap_or_default()),
+        value: Arc::new(move || gpu_info()),
     };
 
     let disk = InfoItem {

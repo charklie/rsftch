@@ -1,10 +1,10 @@
 [package]
 name = "rsftch"
-version = "0.7.5"
+version = "0.7.6"
 edition = "2021"
 authors = ["Charklie charliejohanid@gmail.com"]
 license = "MIT"
-description = "Aesthetically pleasing and lightning fast hardware fetch tool written in rust with pkl configuration."
+description = "Aesthetically pleasing and lightning fast hardware fetch tool written in rust with easy configuration."
 readme = "README.md"
 repository = "https://github.com/charklie/rsftch"
 keywords = ["fetch", "rust", "neofetch"]

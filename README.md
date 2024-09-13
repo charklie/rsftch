@@ -143,9 +143,14 @@ A color which is not supported is parsed as white.
 Capitalization does *not* matter.
 
 ### Known issues
-- Temperature readouts sometimes wrong
 - Icons misaligned in some terminals, some examples include `ansi` and text mode
-- Technically wrong syntax in the JSON configuration file, but if serde's fine with it, I am
+- Technically wrong syntax in the JSON configuration file, but if serde's fine with it, I'm fine with it
+- `tmux` makes terminal readout wrong
+
+##### On WSL
+- Resolution and DE/WM readouts (obviously) don't work in WSL
+- Used disk space readout is only the Linux partition, but total disk space is the whole Windows disk
+- Sensors doesn't work on WSL so some temperatures will be N/A
 
 If you've found a solution of these, please submit a PR.
 
@@ -157,7 +162,7 @@ Bash / Zsh:
 `echo "PATH=\$PATH:~/.cargo/bin/" >> (.bashrc / .zshrc path)`
 
 Fish:
-`set -U fish_user_paths ~/.cargo/bin/ $fish_user_paths`
+`fish_add_path ~/.cargo/bin/`
 
 Nushell:
 `let-env PATH = ($env.PATH | prepend $"($env.HOME)/.cargo/bin")`

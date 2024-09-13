@@ -1,5 +1,6 @@
 use rayon::prelude::*;
 use std::{
+    collections::HashSet,
     env,
     fs::{self, read_to_string, File},
     io::{BufRead, BufReader, Error, Read},
@@ -7,7 +8,6 @@ use std::{
     process::{Command, Stdio},
     sync::{Arc, Mutex},
     time::Duration,
-    collections::HashSet
 };
 
 #[cfg(target_os = "linux")]
@@ -153,17 +153,23 @@ fn gpu_temp() -> String {
     }
 }
 
-pub(crate) fn gpu_info() -> Result<String, Error> {
+pub(crate) fn gpu_info() -> String {
     #[cfg(target_os = "linux")]
     {
-        let output = Command::new("lspci").arg("-nnk").output()?;
+        let output = Command::new("lspci")
+            .arg("-nnk")
+            .output()
+            .map(|output| String::from_utf8_lossy(&output.stdout).to_string())
+            .unwrap_or_else(|_| format!("N/A {}", gpu_temp()));
 
-        let stdout = String::from_utf8_lossy(&output.stdout);
-        let reader = BufReader::new(stdout.as_bytes());
+        let reader = BufReader::new(output.as_bytes());
 
-        for line in reader.lines() {
-            let line = line?;
-            if let Some(start_index) = line.find("NVIDIA").or_else(|| line.find("AMD")) {
+        for line in reader.lines().flatten() {
+            if let Some(start_index) = line
+                .find("NVIDIA")
+                .or_else(|| line.find("AMD"))
+                .or_else(|| line.find("Intel"))
+            {
                 let (prefix, prefix_len) = if line.contains("NVIDIA") {
                     ("NVIDIA", "NVIDIA".len())
                 } else if line.contains("AMD") {
@@ -172,34 +178,31 @@ pub(crate) fn gpu_info() -> Result<String, Error> {
                     } else {
                         ("AMD Radeon", "AMD Radeon".len())
                     }
+                } else if line.contains("Intel") {
+                    ("Intel Integrated", "Intel Integrated".len())
                 } else {
-                    let vendor_index = line.find("controller").unwrap_or(0);
-                    let vendor_str = &line[..vendor_index];
-                    (vendor_str, 0)
+                    ("Unknown Vendor", 0)
                 };
+
                 let start_index = start_index + prefix_len;
-                let start_index = line[start_index..].find('[').ok_or(Error::new(
-                    std::io::ErrorKind::NotFound,
-                    "GPU name not found",
-                ))? + start_index
-                    + 1;
-                let end_index = line[start_index..].find(']').ok_or(Error::new(
-                    std::io::ErrorKind::NotFound,
-                    "GPU name not found",
-                ))? + start_index;
+                let start_index = line[start_index..].find('[').unwrap_or(0) + start_index + 1;
+                let end_index = line[start_index..].find(']').unwrap_or(0) + start_index;
+
                 let gpu_name = &line[start_index..end_index];
-                return Ok(format!("{} {} {}", prefix, gpu_name.trim(), gpu_temp()));
+                return format!("{} {} {}", prefix, gpu_name.trim(), gpu_temp());
             }
         }
 
-        Err(Error::new(std::io::ErrorKind::NotFound, "GPU not found"))
+        format!("N/A {}", gpu_temp())
     }
+
     #[cfg(target_os = "netbsd")]
     {
-        let output = Command::new("pcictl").args(&["pci0", "list"]).output()?;
-        let output_str = String::from_utf8_lossy(&output.stdout);
-
-        let formatted_str = output_str
+        let formatted_str = Command::new("pcictl")
+            .args(&["pci0", "list"])
+            .output()
+            .map(|output| String::from_utf8_lossy(&output.stdout).to_string())
+            .unwrap_or_else(|_| format!("N/A {}", gpu_temp()))
             .lines()
             .find(|&l| l.contains("VGA display"))
             .and_then(|l| l.rsplitn(2, ':').next())
@@ -209,11 +212,10 @@ pub(crate) fn gpu_info() -> Result<String, Error> {
                     .0
                     .trim()
                     .to_string()
-            });
+            })
+            .unwrap_or_else(|| format!("N/A {}", gpu_info()));
 
-        formatted_str
-            .map(|name| format!("{} {}", name, gpu_temp()))
-            .ok_or_else(|| Error::new(std::io::ErrorKind::NotFound, "GPU not found"))
+        format!("{} {}", formatted_str, gpu_temp())
     }
 }
 
@@ -222,7 +224,7 @@ pub(crate) fn disk_usage() -> String {
         Ok(output) if output.status.success() => {
             String::from_utf8(output.stdout).unwrap_or_default()
         }
-        _ => return String::new(),
+        _ => return String::from("N/A"),
     };
 
     let line = output_str.lines().find(|line| line.starts_with('/'));
@@ -311,67 +313,45 @@ fn package_managers() -> Vec<String> {
         .collect()
 }
 
-fn count_packages(manager: &str, args: &[&str], stdin_cmd: Option<&str>) -> Option<i16> {
-    let output = if let Some(stdin_cmd) = stdin_cmd {
-        Command::new(stdin_cmd)
-            .args(args)
-            .stdout(Stdio::piped())
-            .spawn()
-            .and_then(|child| {
-                Command::new("wc")
-                    .args(["-l"])
-                    .stdin(child.stdout.unwrap())
-                    .output()
-            })
-    } else {
-        Command::new(manager)
-            .args(args)
-            .stdout(Stdio::piped())
-            .spawn()
-            .and_then(|child| {
-                Command::new("wc")
-                    .args(["-l"])
-                    .stdin(child.stdout.unwrap())
-                    .output()
-            })
-    };
+fn count_packages(command: &str, args: &[&str]) -> Option<i16> {
+    let mut cmd = Command::new(command)
+        .args(args)
+        .stdout(Stdio::piped())
+        .spawn()
+        .ok()?;
 
-    output.ok().and_then(|output| {
-        if output.status.success() {
-            String::from_utf8(output.stdout)
-                .ok()
-                .and_then(|count_str| count_str.trim().parse::<i16>().ok())
-        } else {
-            None
-        }
-    })
+    let output = cmd.stdout.take()?;
+    let reader = BufReader::new(output);
+    let line_count = reader.lines().count() as i16;
+
+    let _ = cmd.wait().ok()?;
+    Some(line_count)
 }
 
 pub(crate) fn packages() -> String {
-    let installed_managers = package_managers();
+    let managers = package_managers();
     let packs_numbers = Arc::new(Mutex::new(Vec::new()));
 
-    installed_managers.par_iter().for_each(|manager| {
+    managers.par_iter().for_each(|manager| {
         let count = match manager.as_str() {
-            "xbps-query" => count_packages(manager, &["-l"], None),
-            "dnf" => count_packages(manager, &["list", "installed"], None),
-            "rpm" => count_packages(manager, &["-qa", "--last"], None),
-            "apt" => count_packages("dpkg", &["--get-selections"], Some("grep -w install")),
-            "pacman" => count_packages(manager, &["-Q"], None),
-            "yum" => count_packages(manager, &["list", "installed"], None),
-            "zypper" => count_packages(manager, &["se"], None),
-            "apk" => count_packages(manager, &["list", "--installed"], None),
-            "pkg_info" => count_packages("ls", &["/usr/pkg/pkgdb/"], None).map(|x| x - 1),
-            "pkg" => count_packages("pkg", &["info"], None),
+            "xbps-query" => count_packages(manager, &["-l"]),
+            "dnf" | "yum" => count_packages(manager, &["list", "installed"]),
+            "rpm" => count_packages(manager, &["-qa", "--last"]),
+            "apt" => count_packages("dpkg", &["--list"]),
+            "pacman" => count_packages(manager, &["-Q"]),
+            "zypper" => count_packages(manager, &["se"]),
+            "apk" => count_packages(manager, &["list", "--installed"]),
+            "pkg_info" => count_packages("ls", &["/usr/pkg/pkgdb/"]).map(|x| x - 1),
+            "pkg" => count_packages(manager, &["info"]),
             "emerge" => {
                 if os_pretty_name(None, "ID")
                     .unwrap_or_default()
                     .to_ascii_lowercase()
                     .contains("funtoo")
                 {
-                    count_packages("find", &["/var/db/pkg/", "-name", "PF"], None)
+                    count_packages("find", &["/var/db/pkg/", "-name", "PF"])
                 } else {
-                    count_packages(manager, &["-I"], None)
+                    count_packages(manager, &["-I"])
                 }
             }
             _ => None,
@@ -382,14 +362,18 @@ pub(crate) fn packages() -> String {
         }
     });
 
-    let total_packages: i16 = packs_numbers.lock().unwrap().par_iter().sum();
-    total_packages.to_string()
+    let summed: i16 = packs_numbers.lock().unwrap().par_iter().sum();
+
+    match managers.is_empty() {
+        false => format!("{} ({})", summed, managers.join(", ")),
+        true => String::from("N/A"),
+    }
 }
 
 pub(crate) fn res() -> String {
     let output = match Command::new("xrandr").arg("--query").output() {
         Ok(out) => out,
-        Err(_err) => return String::new(),
+        Err(_) => return String::from("N/A"),
     };
 
     String::from_utf8_lossy(&output.stdout)
@@ -410,23 +394,25 @@ pub(crate) fn res() -> String {
         .join(", ")
 }
 
-pub(crate) fn uptime() -> Result<String, Error> {
-    let file = File::open("/proc/uptime").expect("Failed to open /proc/uptime");
-    let mut reader = BufReader::new(file);
+pub(crate) fn uptime() -> String {
     let mut line = String::new();
 
-    reader
-        .read_line(&mut line)
-        .expect("Failed to read from /proc/uptime");
+    File::open("/proc/uptime")
+        .map_err(|_| "NA".to_string())
+        .and_then(|file| {
+            BufReader::new(file)
+                .read_line(&mut line)
+                .map_err(|_| "N/A".to_string())
+        })
+        .ok();
 
     let uptime_secs: f64 = line
         .split_whitespace()
         .next()
-        .expect("Failed to parse uptime from /proc/uptime")
-        .parse()
-        .expect("Failed to parse uptime as f64");
+        .and_then(|val| val.parse().ok())
+        .unwrap_or_default();
 
-    Ok(format_duration(Duration::from_secs_f64(uptime_secs)))
+    format_duration(Duration::from_secs_f64(uptime_secs)).to_string()
 }
 
 fn format_duration(duration: Duration) -> String {

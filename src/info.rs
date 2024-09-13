@@ -3,7 +3,7 @@ use std::{
     collections::HashSet,
     env,
     fs::{self, read_to_string, File},
-    io::{BufRead, BufReader, Error, Read},
+    io::{BufRead, BufReader, Read},
     path::Path,
     process::{Command, Stdio},
     sync::{Arc, Mutex},

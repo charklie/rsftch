@@ -1,8 +1,10 @@
 <div align="center">
 <h1>Rsftch</h1>
 Fast • Easy to configure • Aesthetically pleasing
-</div>
 
+
+### Thank you for 30k downloads on [crates.io](https://crates.io/crates/rsftch)!
+</div>
 
 ### Screenshots
 
@@ -206,7 +208,7 @@ Currently, Rsftch only works on most GNU/Linux and BSD distributions, at the mom
 ### Contributions
 All PRs are always welcome, just remember to make sure it works on both NetBSD and Linux, additional Windows and MacOS support is appreciated as that will be coming!
 
-### Thanks
+### Special Thanks
 Thank you to:
 - [@siris](https://www.github.com/siris) for helping me with optimizing functions and packaging rsftch for Funtoo Linux.
 - [@0323pin](https://www.github.com/0323pin) for packaging rsftch on pkgsrc and uploading it to [beucismis/awesome-fetch](https://github.com/beucismis/awesome-fetch).

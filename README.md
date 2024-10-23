@@ -63,7 +63,7 @@ For Linux:
 
 #### Source
 ```
-git clone https://github.com/charklie/rsftch.git
+git clone https://github.com/charklie/rsftch.git --depth=1
 cd rsftch
 cargo install --path .
 ```

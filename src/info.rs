@@ -153,6 +153,14 @@ fn gpu_temp() -> String {
     }
 }
 
+fn extract_gpu_name(line: &str) -> String {
+    let parts: Vec<&str> = line.split('[').collect();
+    if parts.len() >= 3 {
+        return parts[2].split(']').next().unwrap_or("Unknown GPU").trim().to_string();
+    }
+    String::from("Unknown GPU")
+}
+
 pub(crate) fn gpu_info() -> String {
     #[cfg(target_os = "linux")]
     {
@@ -165,37 +173,29 @@ pub(crate) fn gpu_info() -> String {
         let reader = BufReader::new(output.as_bytes());
 
         for line in reader.lines().flatten() {
-            if let Some(start_index) = line
-                .find("NVIDIA")
-                .or_else(|| line.find("AMD"))
-                .or_else(|| line.find("Intel"))
-            {
-                let (prefix, prefix_len) = if line.contains("NVIDIA") {
-                    ("NVIDIA", "NVIDIA".len())
-                } else if line.contains("AMD") {
-                    if line.contains("Radeon") {
-                        ("AMD", "AMD".len())
-                    } else {
-                        ("AMD Radeon", "AMD Radeon".len())
-                    }
-                } else if line.contains("Intel") {
-                    ("Intel Integrated", "Intel Integrated".len())
+            if line.contains("NVIDIA") {
+                let prefix = "NVIDIA";
+                let gpu_name = extract_gpu_name(&line);
+                return format!("{} {} {}", prefix, gpu_name, gpu_temp());
+            } else if line.contains("AMD") {
+                let prefix = if line.contains("Radeon") {
+                    "AMD"
                 } else {
-                    ("Unknown Vendor", 0)
+                    "AMD Radeon"
                 };
-
-                let start_index = start_index + prefix_len;
-                let start_index = line[start_index..].find('[').unwrap_or(0) + start_index + 1;
-                let end_index = line[start_index..].find(']').unwrap_or(0) + start_index;
-
-                let gpu_name = &line[start_index..end_index];
-                return format!("{} {} {}", prefix, gpu_name.trim(), gpu_temp());
+                let gpu_name = extract_gpu_name(&line);
+                return format!("{} {} {}", prefix, gpu_name, gpu_temp());
+            } else if line.contains("Intel") {
+                if line.contains("VGA compatible controller") || line.contains("3D controller") {
+                    let prefix = "Intel Integrated";
+                    let gpu_name = extract_gpu_name(&line);
+                    return format!("{} {} {}", prefix, gpu_name, gpu_temp());
+                }
             }
         }
 
         format!("N/A {}", gpu_temp())
     }
-
     #[cfg(target_os = "netbsd")]
     {
         let formatted_str = Command::new("pcictl")

@@ -11,6 +11,9 @@ Fast • Easy to configure • Aesthetically pleasing
 ![image](https://github.com/user-attachments/assets/eee9e38c-4656-44b0-98b6-66f8f605316a)
 ![image](https://github.com/user-attachments/assets/6e9ef28a-d9b1-40af-ab44-fbab9716b250)
 
+# Update
+I've sadly decided to stop working on `rsftch`, and switching my attention to my other system information fetch written in V ([vitty](https://github.com/charklie/vitty)). Of course, any pull requests will be accepted and issues fixed, but I myself won't be adding any new features.
+
 ### ASCII supported distributions
 - Arch Linux
 - Debian
@@ -206,19 +209,10 @@ Configuration file is located at: ~/.config/rsftch/info.json
 Currently, Rsftch only works on most GNU/Linux and BSD distributions, at the moment only NetBSD is confirmed to work fully.
 
 ### Contributions
-All PRs are always welcome, just remember to make sure it works on both NetBSD and Linux, additional Windows and MacOS support is appreciated as that will be coming!
+All PRs are always welcome, just remember to make sure it works on both NetBSD and Linux.
 
 ### Special Thanks
 Thank you to:
 - [@siris](https://www.github.com/siris) for helping me with optimizing functions and packaging rsftch for Funtoo Linux.
 - [@0323pin](https://www.github.com/0323pin) for packaging rsftch on pkgsrc and uploading it to [beucismis/awesome-fetch](https://github.com/beucismis/awesome-fetch).
 - [@MasterRoby3](https://www.github.com/MasterRoby3) for fixing `apt` support in packages function.
-
-### Todo
-- [X] Add support for more info sections
-- [ ] Automatic ASCII generation (this will be delayed until a good figlet implementation is available)
-- [ ] Option to have ASCII on side (?)
-- [X] Rewrite & clean up `packs` function
-- [ ] MacOS support
-- [ ] Windows support (?)
-- [ ] More BSD support

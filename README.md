@@ -12,7 +12,7 @@ Fast • Easy to configure • Aesthetically pleasing
 ![image](https://github.com/user-attachments/assets/6e9ef28a-d9b1-40af-ab44-fbab9716b250)
 
 # Update
-I've sadly decided to stop working on `rsftch`, and switching my attention to my other system information fetch written in V ([vitty](https://github.com/charklie/vitty)). Of course, any pull requests will be accepted and issues fixed, but I myself won't be adding any new features.
+I've sadly decided to stop working on `rsftch`, and switching my attention to other projects. Of course, any pull requests will be accepted and issues fixed, but I myself won't be adding any new features.
 
 ### ASCII supported distributions
 - Arch Linux

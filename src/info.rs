@@ -65,12 +65,15 @@ pub(crate) fn cpu_temp() -> String {
         static REGEX: Lazy<Regex> =
             Lazy::new(|| Regex::new(r"Package id 0:\s+\+(\d+\.\d+)°C").unwrap());
 
-        let output = Command::new("sensors").output().unwrap();
-        let output_str = String::from_utf8_lossy(&output.stdout);
+        if let Ok(output) = Command::new("sensors").output() {
+            let output_str = String::from_utf8_lossy(&output.stdout);
 
-        REGEX
-            .captures(&output_str)
-            .map_or_else(|| "(N/A)".to_string(), |caps| format!("({}°C)", &caps[1]))
+            if let Some(caps) = REGEX.captures(&output_str) {
+                return format!("({}°C)", &caps[1]);
+            }
+        }
+
+        "(N/A)".to_string()
     }
 
     #[cfg(target_os = "netbsd")]
@@ -267,7 +270,7 @@ pub(crate) fn cpu_info() -> String {
             let value = &line[pos + 2..].trim();
 
             if keys.contains(&key.trim()) {
-                return format!("{}{}", value.split('@').next().unwrap_or(value), cpu_temp());
+                return format!("{} {}", value.split('@').next().unwrap_or(value), cpu_temp());
             }
         }
     }
